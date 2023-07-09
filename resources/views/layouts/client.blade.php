@@ -57,15 +57,22 @@
                                             placeholder="Location" name="location">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label" for="formFile">Profile Picture</label>
+                                        <label for="InputStatus" class="form-label">Status</label>
+                                        <select class="form-select" id="InputStatus" id="InputStatus" name="status">
+                                            <option selected="">active</option>
+                                            <option>suspended</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="image">Profile Picture</label>
                                         <input class="form-control" accept="image/*" type="file" id="image"
                                             name="photo">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label" for="formFile"></label>
+                                        <label class="form-label" for="showImage"></label>
                                         <img id="showImage" class="wd-80 ht-80 rounded-circle border border-dark"
                                             src=" {{ url('backend/assets/images/no_image.jpg') }} " alt="profile"
-                                            style="object-fit: cover; ">
+                                            style="object-fit: cover;">
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -129,92 +136,112 @@
                                             <td style='vertical-align:middle'>{{ $item->status }}</td>
                                             <td style='vertical-align:middle'>
                                                 <a class="btn btn-inverse-warning" data-bs-toggle="modal"
-                                                    data-bs-target="#modalEditClient">Edit</a>
-
-                                                <div class="modal fade" id="modalEditClient" tabindex="-1"
-                                                    aria-labelledby="modalEditClientTitle" aria-hidden="true"
-                                                    style="display: none;">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="modalEditClientTitle">Edit
-                                                                    Client</h5>
-                                                                <button type="button" class="btn-close"
-                                                                    data-bs-dismiss="modal"
-                                                                    aria-label="btn-close"></button>
-                                                            </div>
-                                                            @if ($errors->any())
-                                                                <script type="text/javascript">
-                                                                    $(document).ready(function() {
-                                                                        toastr.error("Validation Error");
-                                                                    });
-                                                                </script>
-                                                            @endif
-                                                            <form class="forms-sample" method="POST"
-                                                                enctype="multipart/form-data"
-                                                                {{-- action="{{ route('client.edit') }}" --}}
-                                                                >
-                                                                @csrf
-                                                                <div class="modal-body">
-                                                                    <div class="mb-3">
-                                                                        <label for="InputName"
-                                                                            class="form-label">Name</label>
-                                                                        <input type="text" class="form-control"
-                                                                            id="InputName" autocomplete="off"
-                                                                            placeholder="Name" name="name"
-                                                                            @error('name') is-invalid @enderror" value="{{$item->name}}">
-                                                                        @error('name')
-                                                                            <span
-                                                                                class="text-danger">{{ $message }}</span>
-                                                                        @enderror
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="InputEmail" class="form-label">Email
-                                                                            address</label>
-                                                                        <input type="email" name="email"
-                                                                            class="form-control" id="InputEmail"
-                                                                            placeholder="Email"
-                                                                            @error('Email') is-invalid @enderror" >
-                                                                        @error('email')
-                                                                            <span
-                                                                                class="text-danger">{{ $message }}</span>
-                                                                        @enderror
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="InputLocation"
-                                                                            class="form-label">Location</label>
-                                                                        <input type="text" class="form-control"
-                                                                            id="InputLocation" autocomplete="off"
-                                                                            placeholder="Location" name="location" >
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label" for="formFile">Profile
-                                                                            Picture</label>
-                                                                        <input class="form-control" accept="image/*"
-                                                                            type="file" id="image" name="photo">
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label" for="formFile"></label>
-                                                                        <img id="showImage"
-                                                                            class="wd-100 ht-100 rounded-circle border border-dark"
-                                                                            src=" {{ url('backend/assets/images/no_image.jpg') }} "
-                                                                            alt="profile" style="object-fit: cover; ">
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary"
-                                                                        data-bs-dismiss="modal">Close</button>
-                                                                    <button type="submit" class="btn btn-primary">Save
-                                                                        changes</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {{-- <a href="{{ route('client.delete', $item->client_id) }}"
-                                                    class="btn btn-inverse-danger">Delete</a> --}}
+                                                    data-bs-target="#modalEditClient{{$item->client_id}}">Edit</a>
+                                                @if ($item->picture_id != null)
+                                                <a href="{{route('client.delete.pic', ['client_id' => $item->client_id, 'picture_id' => $item->picture_id])}}"
+                                                    class="btn btn-inverse-danger" id="delete">Delete</a>
+                                                @else
+                                                <a href="{{route('client.delete', $item->client_id)}}"
+                                                    class="btn btn-inverse-danger" id="delete">Delete</a>
+                                                @endif
+                                                
                                             </td>
+                                            <div class="modal fade" id="modalEditClient{{$item->client_id}}" tabindex="-1"
+                                            aria-labelledby="modalEditClientTitle" aria-hidden="true"
+                                            style="display: none;">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="modalEditClientTitle">Edit
+                                                            Client</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="btn-close"></button>
+                                                    </div>
+                                                    <form class="forms-sample" method="POST"
+                                                        enctype="multipart/form-data" action="{{ route('client.edit') }}">
+                                                        @csrf
+                                                        <div class="modal-body">
+                                                            <input type="hidden"  name="id" value="{{ $item->client_id }}">
+                                                            <div class="mb-3">
+                                                                <label for="InputName" class="form-label">Name</label>
+                                                                <input type="text" class="form-control" id="InputName"
+                                                                    autocomplete="off" placeholder="Name" name="name"
+                                                                    @error('name') is-invalid @enderror"
+                                                                    value="{{ $item->name }}">
+                                                                @error('name')
+                                                                    <span class="text-danger">{{ $message }}</span>
+                                                                @enderror
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="InputEmail" class="form-label">Email
+                                                                    address</label>
+                                                                <input type="email" name="email" class="form-control"
+                                                                    id="InputEmail" placeholder="Email"
+                                                                    @error('Email') is-invalid @enderror"
+                                                                    value="{{ $item->email }}">
+                                                                @error('email')
+                                                                    <span class="text-danger">{{ $message }}</span>
+                                                                @enderror
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="InputLocation"
+                                                                    class="form-label">Location</label>
+                                                                <input type="text" class="form-control"
+                                                                    id="InputLocation" autocomplete="off"
+                                                                    placeholder="Location" name="location"
+                                                                    value="{{ $item->location }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="InputStatus" class="form-label">Status</label>
+                                                                <select class="form-select" id="InputStatus" id="InputStatus" name="status">
+                                                                    <option selected="">{{$item->status}}</option>
+                                                                    <option>
+                                                                        @if ($item->status == 'active')
+                                                                            suspended
+                                                                        @else
+                                                                            active
+                                                                        @endif
+                                                                    </option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label" for="image{{$item->client_id}}">Profile
+                                                                    Picture</label>
+                                                                <input class="form-control" accept="image/*"
+                                                                    type="file" id="image{{$item->client_id}}" name="photo">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label" for="showImage{{$item->client_id}}"></label>
+                                                                <img id="showImage{{$item->client_id}}"
+                                                                    class="wd-80 ht-80 rounded-circle border border-dark"
+                                                                    src="{{ !empty($item->file) ? 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) : url('backend/assets/images/no_image.jpg') }}"
+                                                                    alt="profile" style="object-fit: cover;" >
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                                $(document).ready(function() {
+                                                                    $('#image{{$item->client_id}}').change(function(e) {
+                                                                        var reader = new FileReader();
+                                                                        reader.onload = function(e) {
+                                                                            $('#showImage{{$item->client_id}}').attr('src', e.target.result);
+                                                                        }
+                                                                        reader.readAsDataURL(e.target.files['0']);
+                                                                        console.log("Image changed");
+                                                                    });
+                                                                });
+                                                            </script>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                data-bs-dismiss="modal">Close</button>
+                                                            <button type="submit" class="btn btn-primary">Save
+                                                                changes</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                         </tr>
+                                        
                                     @endforeach
 
                                 </tbody>
@@ -234,6 +261,7 @@
                     $('#showImage').attr('src', e.target.result);
                 }
                 reader.readAsDataURL(e.target.files['0']);
+                console.log("Image changed");
             });
         });
     </script>

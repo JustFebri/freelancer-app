@@ -25,7 +25,7 @@ class ProfileController extends Controller
 
 
         if (empty($profileData->picture_id)) {
-            return view('admin.profile.profile', compact('profileData'));
+            return view('admin.profile', compact('profileData'));
         } else {
             $profileData = User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
                 ->select('picture.file', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')

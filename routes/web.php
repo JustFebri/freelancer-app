@@ -37,7 +37,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/client', 'client')->name('client');
         Route::post('/client/store','clientStore')->name('client.store');
         Route::post('/client/edit','clientEdit')->name('client.edit');
-        Route::delete('/client/delete','clientDelete')->name('client.delete');
+        Route::get('/client/delete/{client_id}','clientDelete')->name('client.delete');
+        Route::get('/client/delete/{client_id}/{picture_id}','clientDeletePic')->name('client.delete.pic');
     });
 
     Route::controller(FreelancerController::class)->group(function () {

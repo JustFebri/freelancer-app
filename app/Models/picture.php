@@ -10,4 +10,5 @@ class picture extends Model
     use HasFactory;
     protected $table = 'picture';
     protected $primaryKey = 'picture_id';
+    protected $fillable = ['file', 'filetype', 'filename', 'updated_at'];
 }
