@@ -4,8 +4,11 @@
 
         <nav class="page-breadcrumb">
             <ol class="breadcrumb" style="display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-primary" style="margin-right: 10px">
+                    <i data-feather="file-text" style="padding-right: 5px"></i> Service Request
+                </button>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddClient">
-                    Add Service
+                    <i data-feather="file-plus" style="padding-right: 5px"></i> Add Service
                 </button>
                 <div class="modal fade" id="modalAddClient" tabindex="-1" aria-labelledby="modalAddClientTitle"
                     aria-hidden="true" style="display: none;">
@@ -64,30 +67,38 @@
                             <table id="dataTableExample" class="table">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Location</th>
-                                        <th>Created at</th>
-                                        <th>Updated at</th>
-                                        <th>Action</th>
+                                        <th>ID</th>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Freelancer</th>
+                                        <th>Price</th>
                                         <th>Status</th>
+                                        <th>Created At</th>
+                                        <th>Updated At</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($collection as $item)
-                                        <tr>
-                                            <td>{{ $item['Name'] }}</td>
-                                            <td>{{ $item['Email'] }}</td>
-                                            <td>{{ $item['Location'] }}</td>
-                                            <td>{{ $item['Created at'] }}</td>
-                                            <td>{{ $item['Updated at'] }}</td>
-                                            <td>{{ $item['Status'] }}</td>
-                                            <td>
-                                                <a href="" class="btn btn-inverse-warning">Edit</a>
-                                                <a href="" class="btn btn-inverse-danger">Delete</a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
+
+                                    <tr>
+                                        <td><a href="#">Product-001</a></td>
+                                        <td>
+                                            <img style="object-fit: cover;"
+                                                src="https://fiverr-res.cloudinary.com/images/t_smartwm/t_main1,q_auto,f_auto,q_auto,f_auto/attachments/delivery/asset/f8cf0e0d6a01c51cb75aa4fab2644b50-1679520154/recursivefaults_hipinspire/design-a-creative-and-unique-mobile-app.png"
+                                                class="rounded me-2" alt="profile-image">
+                                            <span>I will do mobile app ui ux design</span>
+                                        </td>
+                                        <td>App Design</td>
+                                        <td><a href="#">Denis Kravets</a></td>
+                                        <td>Rp 4.500.000</td>
+                                        <td>Active</td>
+                                        <td>2023-07-09 18:06:58</td>
+                                        <td>2023-07-13 12:44:33</td>
+                                        <td>
+                                            <a href="" class="btn btn-inverse-warning">Edit</a>
+                                            <a href="" class="btn btn-inverse-danger">Delete</a>
+                                        </td>
+                                    </tr>
 
                                 </tbody>
                             </table>

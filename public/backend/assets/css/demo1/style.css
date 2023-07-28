@@ -4774,20 +4774,24 @@ div.tox .btn-group-vertical > .btn-group:not(:first-child) > .tox-button,
 .badge {
   --bs-badge-padding-x: 0.65em;
   --bs-badge-padding-y: 0.35em;
-  --bs-badge-font-size: 0.8em;
+  --bs-badge-font-size: 14px;
   --bs-badge-font-weight: 500;
-  --bs-badge-color: #fff;
-  --bs-badge-border-radius: 0.25rem;
+  --bs-badge-color: #7987a1; /* Set font color to black */
+  --bs-badge-background-color: #f2f2f2; /* Set background color to gray */
+  --bs-badge-border-radius: 1rem;
   display: inline-block;
   padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
   font-size: var(--bs-badge-font-size);
   font-weight: var(--bs-badge-font-weight);
   line-height: 1;
   color: var(--bs-badge-color);
+  background-color: var(--bs-badge-background-color);
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
   border-radius: var(--bs-badge-border-radius);
+  margin-block-end: 0.5em;
+  margin-block-start: 0.2em;
 }
 .badge:empty {
   display: none;
@@ -6145,11 +6149,42 @@ div.tox .btn-group-vertical > .btn-group:not(:first-child) > .tox-button,
   position: absolute;
   right: 15%;
   bottom: 1.25rem;
-  left: 15%;
+  left: 5%;
   padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
+  padding-bottom: 0.3rem;
   color: #fff;
-  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.carousel-item:before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.carousel-item:hover:before {
+  opacity: 1;
+}
+
+.carousel-item:hover .carousel-caption {
+  opacity: 1;
+  /* Add any additional styles as needed */
+}
+
+.carousel-caption .slide-label {
+  margin: 0;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 10px;
+  color: #fff;
 }
 
 .carousel-dark .carousel-control-prev-icon,
@@ -21255,11 +21290,13 @@ div.tox .btn-group-lg > .btn-icon-text.tox-button .btn-icon-append,
 .table th,
 .table td {
   white-space: nowrap;
+  vertical-align:middle;
 }
 .table td img {
-  width: 36px;
+  width: 50px; min-width: 50px; height: 50px;
+  /* width: 36px;
   height: 36px;
-  border-radius: 100%;
+  border-radius: 100%; */
 }
 
 .timeline {
@@ -22473,3 +22510,11 @@ div.tox .tox-dialog__body {
   margin: 0 0 0 0.7em;
 }
 /*# sourceMappingURL=../maps/demo1/style.css.map */
+
+.item-container {
+  font-size: 24px; /* Adjust the font size as desired */
+}
+
+.ticket-content{
+  padding-left: 23px;
+}

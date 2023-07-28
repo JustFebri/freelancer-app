@@ -38,17 +38,6 @@
                             <label class="tx-11 fw-bolder mb-0 text-uppercase">updated at</label>
                             <p class="text-muted">{{ $profileData->updated_at }}</p>
                         </div>
-                        <div class="mt-3 d-flex social-links">
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="github"></i>
-                            </a>
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="twitter"></i>
-                            </a>
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="instagram"></i>
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -67,7 +56,7 @@
                                 <div class="mb-3">
                                     <label for="exampleInputUsername1" class="form-label">Username</label>
                                     <input name="name" type="text" class="form-control" id="exampleInputUsername1"
-                                        autocomplete="off" placeholder="Username" value="{{ $profileData->name }}">
+                                        autocomplete="off" placeholder="Username" value="{{ $profileData->name }}" @disabled(true)>
                                 </div>
                                 <div class="mb-3">
                                     <label for="exampleInputEmail1" class="form-label">Email address</label>

@@ -1,6 +1,6 @@
 <nav class="sidebar">
     <div class="sidebar-header">
-        <a href="#" class="sidebar-brand">
+        <a href="{{ route('dashboard') }}" class="sidebar-brand">
             Freelancer<span>App</span>
         </a>
         <div class="sidebar-toggler not-active">
@@ -45,7 +45,7 @@
             <li class="nav-item">
                 <a href="{{ route('order') }}" class="nav-link">
                     <i class="link-icon" data-feather="dollar-sign"></i>
-                    <span class="link-title">Transaction</span>
+                    <span class="link-title">Order</span>
                 </a>
             </li>
             <li class="nav-item">

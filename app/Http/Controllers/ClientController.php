@@ -24,10 +24,11 @@ class ClientController extends Controller
     public function clientStore(request $request)
     {
         $currentTimestamp = Carbon::now();
+        $location = $request->location ?? '';
 
         $request->validate([
-            'name' => 'required|max:200',
-            'email' => 'required|unique:client',
+            'name' => 'required|string|max:200',
+            'email' => 'required|email|unique:client',
             'password' => 'required|min:8',
         ]);
 
@@ -39,29 +40,19 @@ class ClientController extends Controller
             $newPicture->file = $file->getContent();
             $newPicture->filetype = $file->getMimeType();
             $newPicture->save();
-            if ($request->location != null) {
-                client::insert([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'location' => $request->location,
-                    'picture_id' => $newPicture->picture_id,
-                    'status' => $request->status,
-                    'created_at' => $currentTimestamp,
-                    'updated_at' => $currentTimestamp,
-                ]);
-            } else {
-                client::insert([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'location' => '',
-                    'picture_id' => $newPicture->picture_id,
-                    'status' => $request->status,
-                    'created_at' => $currentTimestamp,
-                    'updated_at' => $currentTimestamp,
-                ]);
-            }
+
+            client::insert([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'location' => $location,
+                'picture_id' => $newPicture->picture_id,
+                'status' => $request->status,
+                'created_at' => $currentTimestamp,
+                'updated_at' => $currentTimestamp,
+                'email_verified_at' => null,
+                'remember_token' => null
+            ]);
 
             $notification = array(
                 'message' => 'Client Create Successfully',
@@ -70,30 +61,19 @@ class ClientController extends Controller
 
             return redirect()->route('client')->with($notification);
         } else {
-            if ($request->location == null) {
-                client::insert([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'location' => '',
-                    'picture_id' => null,
-                    'status' =>  $request->status,
-                    'created_at' => $currentTimestamp,
-                    'updated_at' => $currentTimestamp,
-                ]);
-            } else {
-                client::insert([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'location' => $request->location,
-                    'picture_id' => null,
-                    'status' =>  $request->status,
-                    'created_at' => $currentTimestamp,
-                    'updated_at' => $currentTimestamp,
-                ]);
-            }
 
+            client::insert([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'location' => $location,
+                'picture_id' => null,
+                'status' =>  $request->status,
+                'created_at' => $currentTimestamp,
+                'updated_at' => $currentTimestamp,
+                'email_verified_at' => null,
+                'remember_token' => null
+            ]);
 
             $notification = array(
                 'message' => 'Client Create Successfully',
@@ -136,21 +116,22 @@ class ClientController extends Controller
         $id = $request->id;
         $profileData = client::find($id);
         $currentTimestamp = Carbon::now();
+        $location = $request->location ?? '';
+
+        if ($profileData->email == $request->email) {
+            $request->validate([
+                'name' => 'required|max:200',
+            ]);
+        } else {
+            $request->validate([
+                'name' => 'required|max:200',
+                'email' => 'required|unique:client',
+            ]);
+        }
 
         if ($request->file('photo')) {
-            
+
             if (!empty($profileData->picture_id)) {
-             
-                if($profileData->email == $request->email){
-                    $request->validate([
-                        'name' => 'required|max:200',
-                    ]);
-                }else{
-                    $request->validate([
-                        'name' => 'required|max:200',
-                        'email' => 'required|unique:client',
-                    ]);
-                }
                 $data = client::join('picture', 'client.picture_id', '=', 'picture.picture_id')
                     ->select('picture.file', 'client.picture_id', 'picture.filetype', 'client.name', 'client.email', 'client.created_at', 'client.updated_at')
                     ->find($id);
@@ -163,41 +144,20 @@ class ClientController extends Controller
                     'updated_at' => $currentTimestamp,
                 ]);
 
-                if($request->location== null){
-                    $profileData->update([
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'location' => '',
-                        'updated_at' => $currentTimestamp,
-                        'status' => $request->status
-                    ]);
-                }else{
-                    $profileData->update([
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'location' => $request->location,
-                        'updated_at' => $currentTimestamp,
-                        'status' => $request->status
-                    ]);
-                }
+                $profileData->update([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'location' => $location,
+                    'updated_at' => $currentTimestamp,
+                    'status' => $request->status
+                ]);
 
                 $notification = array(
-                    'message' => 'Profile Updated Successfully',
+                    'message' => 'Client Updated Successfully',
                     'alert-type' => 'success'
                 );
                 return redirect()->route('client')->with($notification);
             } else {
-                if($profileData->email == $request->email){
-                    $request->validate([
-                        'name' => 'required|max:200',
-                    ]);
-                }else{
-                    $request->validate([
-                        'name' => 'required|max:200',
-                        'email' => 'required|unique:client',
-                    ]);
-                }
-
                 $file = $request->file('photo');
                 $id = picture::insertGetId([
                     'filename' => date('YmDHi') . $file->getClientOriginalName(),
@@ -207,67 +167,36 @@ class ClientController extends Controller
                     'updated_at' => $currentTimestamp,
                 ]);
 
-                if($request->location== null){
-                    $profileData->update([
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'location' => '',
-                        'updated_at' => $currentTimestamp,
-                        'picture_id' => $id,
-                        'status' => $request->status
-                    ]);
-                }else{
-                    $profileData->update([
-                        'name' => $request->name,
-                        'email' => $request->email,
-                        'location' => $request->location,
-                        'updated_at' => $currentTimestamp,
-                        'picture_id' => $id,
-                        'status' => $request->status
-                    ]);
-                }
-                
+                $profileData->update([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'location' => $location,
+                    'updated_at' => $currentTimestamp,
+                    'picture_id' => $id,
+                    'status' => $request->status
+                ]);
 
                 $notification = array(
-                    'message' => 'Profile Updated Successfully',
+                    'message' => 'Client Updated Successfully',
                     'alert-type' => 'success'
                 );
                 return redirect()->route('client')->with($notification);
             }
         } else {
-            if($profileData->email == $request->email){
-                $request->validate([
-                    'name' => 'required|max:200',
-                ]);
-            }else{
-                $request->validate([
-                    'name' => 'required|max:200',
-                    'email' => 'required|unique:client',
-                ]);
-            }
-            if($request->location == null){
-                client::findOrFail($id)->update([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'location' => '',
-                    'updated_at' => $currentTimestamp,
-                    'status' => $request->status
-                ]);
-            }else{
-                client::findOrFail($id)->update([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'location' => $request->location,
-                    'updated_at' => $currentTimestamp,
-                    'status' => $request->status
-                ]);
-            }
+            client::findOrFail($id)->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'location' => $location,
+                'updated_at' => $currentTimestamp,
+                'status' => $request->status
+            ]);
 
             $notification = array(
-                'message' => 'Profile Updated Successfully',
+                'message' => 'Client Updated Successfully',
                 'alert-type' => 'success'
             );
             return redirect()->route('client')->with($notification);
         }
     }
+
 }

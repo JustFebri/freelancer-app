@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\Traits\Timestamp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
@@ -38,10 +39,10 @@ class ProfileController extends Controller
     {
         $id = Auth::user()->admin_id;
         $profileData = User::find($id);
+        $currentTimestamp = Carbon::now();
 
         if ($request->file('photo')) {
             if (!empty($profileData->picture_id)) {
-                $profileData->name = $request->name;
                 $profileData->email = $request->email;
                 $data = User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
                     ->select('picture.file', 'admin.picture_id', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
@@ -51,22 +52,21 @@ class ProfileController extends Controller
 
                 $file = $request->file('photo');
 
-                $filename = date('YmDHi') . $file->getClientOriginalName();
-                $newPicture = new picture;
-                $newPicture->filename = $filename;
-                $newPicture->file = $file->getContent();
-                $newPicture->filetype = $file->getMimeType();
-                $newPicture->save();
-                $profileData->picture_id = $newPicture->picture_id;
+                picture::findOrFail($data->picture_id)->update([
+                    'filename' => date('YmDHi') . $file->getClientOriginalName(),
+                    'filetype' => $file->getMimeType(),
+                    'file' => $file->getContent(),
+                    'updated_at' => $currentTimestamp,
+                ]);
+
                 $profileData->save();
-                $oldPic->delete();
+
                 $notification = array(
                     'message' => 'Profile Updated Successfully',
                     'alert-type' => 'success'
                 );
                 return redirect()->back()->with($notification);
             } else {
-                $profileData->name = $request->name;
                 $profileData->email = $request->email;
                 $file = $request->file('photo');
                 $filename = date('YmDHi') . $file->getClientOriginalName();
@@ -84,7 +84,6 @@ class ProfileController extends Controller
                 return redirect()->back()->with($notification);
             }
         } else {
-            $profileData->name = $request->name;
             $profileData->email = $request->email;
             $profileData->save();
             $notification = array(

@@ -43,6 +43,11 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(FreelancerController::class)->group(function () {
         Route::get('/freelancer', 'freelancer')->name('freelancer');
+        Route::post('/freelancer/store','freelancerStore')->name('freelancer.store');
+        Route::post('/freelancer/edit','freelancerEdit')->name('freelancer.edit');
+        Route::get('/freelancer/delete/{freelancer_id}','freelancerDelete')->name('freelancer.delete');
+        Route::get('/freelancer/delete/{freelancer_id}/{picture_id}','freelancerDeletePic')->name('freelancer.delete.pic');
+        Route::get('/freelancer/profile/{freelancer_id}', 'freelancerProfile')->name('freelancer.profile');
     });
 
     Route::controller(ServiceController::class)->group(function () {
