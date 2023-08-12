@@ -27,3 +27,7 @@ Route::get('/test', function(){
 });
 
 Route::post('/registerClient', [AuthController::class, 'registerClient']);
+Route::post('/loginClient', [AuthController::class, 'loginClient']);
+
+// Route::post('/registerFreelancer', [AuthController::class, 'freelancerClient']);
+// Route::post('/loginFreelancer', [AuthController::class, 'freelancerClient']);

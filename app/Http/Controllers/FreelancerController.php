@@ -53,7 +53,9 @@ class FreelancerController extends Controller
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
                 'information' => $information,
-                'identity_number' => $request->identity_number
+                'identity_number' => $request->identity_number,
+                'email_verified_at' => null,
+                'remember_token' => null
             ]);
 
             $notification = array(
@@ -74,7 +76,9 @@ class FreelancerController extends Controller
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
                 'information' => $information,
-                'identity_number' => $request->identity_number
+                'identity_number' => $request->identity_number,
+                'email_verified_at' => null,
+                'remember_token' => null
             ]);
 
             $notification = array(
