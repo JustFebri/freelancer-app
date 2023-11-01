@@ -16,6 +16,11 @@ return new class extends Migration
                 ->references('subcategory_id')
                 ->on('sub_category')
                 ->onDelete('cascade');
+
+            $table->foreign('freelancer_id')
+                ->references('freelancer_id')
+                ->on('freelancer')
+                ->onDelete('cascade');
         });
     }
 
@@ -26,6 +31,7 @@ return new class extends Migration
     {
         Schema::table('service', function (Blueprint $table) {
             $table->dropForeign(['subcategory_id']);
+            $table->dropForeign(['freelancer_id']);
         });
     }
 };

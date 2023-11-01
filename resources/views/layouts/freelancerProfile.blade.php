@@ -8,17 +8,17 @@
                     <div class="position-relative">
                         <figure class="overflow-hidden mb-0 d-flex justify-content-center">
                             <img src="{{ url('backend/assets/images/wallpaper.jpg') }}" class="rounded-top" alt="profile cover"
-                                style="object-fit: cover; border-radius: 10px;" width="1560" height="370">
+                                style="object-fit: cover; border-radius: 10px;" width="100%" height="370">
                         </figure>
                         <div
                             class="d-flex justify-content-between align-items-center position-absolute top-90 w-100 px-2 px-md-4 mt-n4">
                             <div class="d-flex align-items-center">
-                                @if ($freelancer->file == null)
-                                    <img class="wd-70 ht-70 rounded-circle" style="object-fit: cover; "
+                                @if ($freelancer->picasset == null)
+                                    <img class="wd-70 ht-70 rounded-circle" style="object-fit: cover; border: 1px solid #999; "
                                         src="{{ url('backend/assets/images/no_image.jpg') }}" alt="profile">
                                 @else
                                     <img class="wd-70 ht-70 rounded-circle" style="object-fit: cover; "
-                                        src="{{ 'data:' . $freelancer->filetype . ';base64,' . base64_encode($freelancer->file) }}"
+                                        src="{{ asset($freelancer->picasset) }}"
                                         alt="profile">
                                 @endif
 
@@ -54,7 +54,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <h6 class="card-title mb-0">About</h6>
                         </div>
-                        <p>{{ $freelancer->information }}</p>
+                        <p>{{ $freelancer->description }}</p>
                         <div class="mt-3">
                             <label class="tx-11 fw-bolder mb-0 text-uppercase">Member Since</label>
                             <p class="text-muted">{{ $formattedDate }}</p>

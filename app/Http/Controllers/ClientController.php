@@ -4,21 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\client;
 use App\Models\picture;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ClientController extends Controller
 {
     public function client()
     {
-        $type = DB::table('client')
-            ->leftJoin('picture', 'client.picture_id', '=', 'picture.picture_id')
-            ->select('picture.file', 'picture.filetype', 'client.picture_id', 'client.client_id', 'client.name', 'client.email', 'client.location', 'client.created_at', 'client.updated_at', 'client.status')
+        $db_client = DB::table('client as c')
+            ->leftJoin('user as u', 'c.user_id', '=', 'u.user_id')
+            ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
+            ->select('c.client_id', 'u.user_id', 'c.total_spent', 'c.orders_made', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->latest()
             ->get();
-        return view('layouts.client', compact('type'));
+
+        return view('layouts.client', compact('db_client'));
     }
 
     public function clientStore(request $request)
@@ -28,20 +32,23 @@ class ClientController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:200',
-            'email' => 'required|email|unique:client',
+            'email' => 'required|email|unique:user',
             'password' => 'required|min:8',
         ]);
 
         if ($request->file('photo')) {
-            $file = $request->file('photo');
-            $filename = date('YmDHi') . $file->getClientOriginalName();
+
+            $request->file('photo')->store('public/images');
+            $filename = $request->file('photo')->hashName();
+            $path = 'public/images/' . $filename;
+            $url = asset(Storage::url($path));
+
             $newPicture = new picture;
-            $newPicture->filename = $filename;
-            $newPicture->file = $file->getContent();
-            $newPicture->filetype = $file->getMimeType();
+            $newPicture->piclink = $url;
+            $newPicture->picasset = Storage::url($path);
             $newPicture->save();
 
-            client::insert([
+            $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
@@ -51,7 +58,17 @@ class ClientController extends Controller
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
                 'email_verified_at' => null,
-                'remember_token' => null
+                'remember_token' => null,
+                'profile_type' => 'client',
+                'last_login' => null,
+            ];
+
+            $user_id = DB::table('user')->insertGetId($userData);
+
+            client::insert([
+                'user_id' => $user_id,
+                'orders_made' => 0,
+                'total_spent' => 0,
             ]);
 
             $notification = array(
@@ -62,18 +79,28 @@ class ClientController extends Controller
             return redirect()->route('client')->with($notification);
         } else {
 
-            client::insert([
+            $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'location' => $location,
                 'picture_id' => null,
-                'status' =>  $request->status,
+                'status' => $request->status,
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
                 'email_verified_at' => null,
-                'remember_token' => null
+                'remember_token' => null,
+                'profile_type' => 'client',
+                'last_login' => null,
+            ];
+            $user_id = DB::table('user')->insertGetId($userData);
+
+            client::insert([
+                'user_id' => $user_id,
+                'orders_made' => 0,
+                'total_spent' => 0,
             ]);
+
 
             $notification = array(
                 'message' => 'Client Create Successfully',
@@ -84,9 +111,10 @@ class ClientController extends Controller
         }
     }
 
-    public function clientDelete($client_id)
+    public function clientDelete($client_id, $user_id)
     {
         client::findOrFail($client_id)->delete();
+        user::findOrFail($user_id)->delete();
 
         $notification = array(
             'message' => 'Client Deleted Successfully',
@@ -96,12 +124,16 @@ class ClientController extends Controller
         return redirect()->back()->with($notification);
     }
 
-    public function clientDeletePic($client_id, $picture_id)
+    public function clientDeletePic($client_id, $user_id, $picture_id)
     {
         client::findOrFail($client_id)->delete();
+        user::findOrFail($user_id)->delete();
 
-        picture::findOrFail($picture_id)->delete();
+        $picture = picture::findOrFail($picture_id);
+        $filename = basename($picture->picasset);
+        Storage::delete('public/images/' . $filename);
 
+        $picture->delete();
 
         $notification = array(
             'message' => 'Client Deleted Successfully',
@@ -114,7 +146,7 @@ class ClientController extends Controller
     public function clientEdit(Request $request)
     {
         $id = $request->id;
-        $profileData = client::find($id);
+        $profileData = user::find($id);
         $currentTimestamp = Carbon::now();
         $location = $request->location ?? '';
 
@@ -125,23 +157,29 @@ class ClientController extends Controller
         } else {
             $request->validate([
                 'name' => 'required|max:200',
-                'email' => 'required|unique:client',
+                'email' => 'required|unique:user',
             ]);
         }
 
         if ($request->file('photo')) {
 
             if (!empty($profileData->picture_id)) {
-                $data = client::join('picture', 'client.picture_id', '=', 'picture.picture_id')
-                    ->select('picture.file', 'client.picture_id', 'picture.filetype', 'client.name', 'client.email', 'client.created_at', 'client.updated_at')
+                $data = user::join('picture', 'user.picture_id', '=', 'picture.picture_id')
+                    ->select('picture.picasset', 'user.picture_id', 'user.name', 'user.email', 'user.created_at', 'user.updated_at')
                     ->find($id);
 
+                $filename = basename($data->picasset);
+                Storage::delete('public/images/' . $filename);
+
                 $file = $request->file('photo');
+                $file->store('public/images');
+                $filename = $request->file('photo')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+
                 picture::findOrFail($data->picture_id)->update([
-                    'filename' => date('YmDHi') . $file->getClientOriginalName(),
-                    'filetype' => $file->getMimeType(),
-                    'file' => $file->getContent(),
-                    'updated_at' => $currentTimestamp,
+                    'piclink' => $url,
+                    'picasset' => Storage::url($path),
                 ]);
 
                 $profileData->update([
@@ -158,11 +196,14 @@ class ClientController extends Controller
                 );
                 return redirect()->route('client')->with($notification);
             } else {
-                $file = $request->file('photo');
+                $request->file('photo')->store('public/images');
+                $filename = $request->file('photo')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+
                 $id = picture::insertGetId([
-                    'filename' => date('YmDHi') . $file->getClientOriginalName(),
-                    'filetype' => $file->getMimeType(),
-                    'file' => $file->getContent(),
+                    'piclink' => $url,
+                    'picasset' => Storage::url($path),
                     'created_at' => $currentTimestamp,
                     'updated_at' => $currentTimestamp,
                 ]);
@@ -183,7 +224,7 @@ class ClientController extends Controller
                 return redirect()->route('client')->with($notification);
             }
         } else {
-            client::findOrFail($id)->update([
+            user::findOrFail($id)->update([
                 'name' => $request->name,
                 'email' => $request->email,
                 'location' => $location,
@@ -198,5 +239,4 @@ class ClientController extends Controller
             return redirect()->route('client')->with($notification);
         }
     }
-
 }

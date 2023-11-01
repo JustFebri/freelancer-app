@@ -4,14 +4,14 @@ namespace App\Http\Requests\API;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RegisterClientRequest extends FormRequest
+class ChangeTypeController extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,9 +22,8 @@ class RegisterClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:200',
-            'email' => 'required|email|unique:client',
-            'password' => 'required|min:8',
+            'identity_number' => 'required|min:16|unique:freelancer',
+            'description' => 'required|max:600',
         ];
     }
 }

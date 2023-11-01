@@ -10,5 +10,5 @@ class language extends Model
     use HasFactory;
     protected $table = 'language';
     protected $primaryKey = 'language_id';
-    protected $timestamps = false;
+    public $timestamps = false;
 }

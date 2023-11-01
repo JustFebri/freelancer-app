@@ -101,6 +101,8 @@
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Location</th>
+                                        <th>Order Made</th>
+                                        <th>Total Spent</th>
                                         <th>Created at</th>
                                         <th>Updated at</th>
                                         <th>Status</th>
@@ -108,11 +110,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($type as $key => $item)
+                                    @foreach ($db_client as $key => $item)
                                         <tr>
                                             <td>{{ $item->client_id }}</td>
                                             <td>
-                                                @if ($item->file == null)
+                                                @if ($item->picasset == null)
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
                                                         src="{{ url('backend/assets/images/no_image.jpg') }}"
@@ -120,7 +122,7 @@
                                                 @else
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
-                                                        src="{{ 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) }}"
+                                                        src="{{ asset($item->picasset) }}"
                                                         alt="profile" style="object-fit: cover; ">
                                                 @endif
                                                 <span>{{ $item->name }}</span>
@@ -133,17 +135,19 @@
                                                     {{ $item->location }}
                                                 @endif
                                             </td>
+                                            <td>{{ $item->orders_made }}</td>
+                                            <td>{{ $item->total_spent }}</td>
                                             <td>{{ $item->created_at }}</td>
                                             <td>{{ $item->updated_at }}</td>
-                                            <td>{{ $item->status }}</td>
+                                            <td style="text-transform:capitalize">{{ $item->status }}</td>
                                             <td>
                                                 <a class="btn btn-inverse-warning" data-bs-toggle="modal"
                                                     data-bs-target="#modalEditClient{{ $item->client_id }}">Edit</a>
                                                 @if ($item->picture_id != null)
-                                                    <a href="{{ route('client.delete.pic', ['client_id' => $item->client_id, 'picture_id' => $item->picture_id]) }}"
+                                                    <a href="{{ route('client.delete.pic', ['client_id' => $item->client_id, 'user_id' => $item->user_id, 'picture_id' => $item->picture_id]) }}"
                                                         class="btn btn-inverse-danger" id="delete">Delete</a>
                                                 @else
-                                                    <a href="{{ route('client.delete', $item->client_id) }}"
+                                                    <a href="{{ route('client.delete', ['client_id' => $item->client_id, 'user_id' => $item->user_id]) }}"
                                                         class="btn btn-inverse-danger" id="delete">Delete</a>
                                                 @endif
 
@@ -165,7 +169,7 @@
                                                             @csrf
                                                             <div class="modal-body">
                                                                 <input type="hidden" name="id"
-                                                                    value="{{ $item->client_id }}">
+                                                                    value="{{ $item->user_id }}">
                                                                 <div class="mb-3">
                                                                     <label for="InputName{{ $item->client_id }}"
                                                                         class="form-label">Name</label>
@@ -230,7 +234,7 @@
                                                                         for="showImage{{ $item->client_id }}"></label>
                                                                     <img id="showImage{{ $item->client_id }}"
                                                                         class="wd-80 ht-80 rounded-circle border border-dark"
-                                                                        src="{{ !empty($item->file) ? 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) : url('backend/assets/images/no_image.jpg') }}"
+                                                                        src="{{ !empty($item->picasset) ? asset($item->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                                                         alt="profile" style="object-fit: cover;">
                                                                 </div>
                                                                 <script type="text/javascript">

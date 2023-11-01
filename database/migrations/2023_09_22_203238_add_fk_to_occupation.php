@@ -11,10 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('verification_request', function (Blueprint $table) {
+        Schema::table('occupation', function (Blueprint $table) {
             $table->foreign('freelancer_id')
                 ->references('freelancer_id')
                 ->on('freelancer')
+                ->onDelete('cascade');
+
+                $table->foreign('category_id')
+                ->references('category_id')
+                ->on('category')
                 ->onDelete('cascade');
         });
     }
@@ -24,8 +29,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('verification_request', function (Blueprint $table) {
+        Schema::table('occupation', function (Blueprint $table) {
             $table->dropForeign(['freelancer_id']);
+            $table->dropForeign(['category_id']);
         });
     }
 };

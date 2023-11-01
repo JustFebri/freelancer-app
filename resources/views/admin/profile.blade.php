@@ -15,7 +15,7 @@
                                     src="{{ !empty($profileData->file) ? url('upload/profile_images/' . $profileData->profile_images) : url('backend/assets/images/no_image.jpg') }}"
                                     alt="profile"> --}}
                                 <img class="wd-100 ht-100 rounded-circle border border-dark"
-                                    src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                    src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                     alt="profile" style="object-fit: cover;">
                                 <span class="h4 ms-3 text-dark">{{ $profileData->name }}</span>
                             </div>
@@ -56,7 +56,8 @@
                                 <div class="mb-3">
                                     <label for="exampleInputUsername1" class="form-label">Username</label>
                                     <input name="name" type="text" class="form-control" id="exampleInputUsername1"
-                                        autocomplete="off" placeholder="Username" value="{{ $profileData->name }}" @disabled(true)>
+                                        autocomplete="off" placeholder="Username" value="{{ $profileData->name }}"
+                                        @disabled(true)>
                                 </div>
                                 <div class="mb-3">
                                     <label for="exampleInputEmail1" class="form-label">Email address</label>
@@ -65,12 +66,13 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" for="formFile">File upload</label>
-                                    <input class="form-control" type="file" id="image" accept="image/*" name="photo">
+                                    <input class="form-control" type="file" id="image" accept="image/*"
+                                        name="photo">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" for="formFile"></label>
                                     <img id="showImage" class="wd-80 ht-80 rounded-circle border border-dark"
-                                        src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                        src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                         alt="profile" style="object-fit: cover; ">
                                 </div>
 

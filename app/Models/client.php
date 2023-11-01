@@ -12,33 +12,11 @@ class client extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
     protected $table = 'client';
     protected $primaryKey = 'client_id';
+    public $timestamps = false;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'location',
-        'picture_id',
-        'status',
-        'updated_at',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
+        'user_id',
+        'orders_made',
+        'total_spent',
     ];
 }

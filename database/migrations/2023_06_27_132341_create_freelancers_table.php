@@ -13,17 +13,12 @@ return new class extends Migration
     {
         Schema::create('freelancer', function (Blueprint $table) {
             $table->increments('freelancer_id');
-            $table->unsignedInteger('picture_id')->nullable();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->unsignedInteger('user_id')->nullable();
             $table->string('identity_number')->unique();
-            $table->text('information');
-            $table->string('status')->default('pending approval');;
-            $table->string('location');
-            $table->rememberToken();
-            $table->timestamps();
+            $table->text('description');
+            $table->float('rating');
+            $table->unsignedInteger('total_sales');
+            $table->decimal('revenue', 10, 2);
         });
     }
 

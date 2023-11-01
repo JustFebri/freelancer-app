@@ -13,15 +13,15 @@
                                             <div class="d-flex align-items-center">
                                                 @php
                                                     $id = Auth::user()->admin_id;
-                                                    $profileData = App\Models\User::find($id);
+                                                    $profileData = App\Models\admin::find($id);
                                                     if (!empty($profileData->picture_id)) {
-                                                        $profileData = App\Models\User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                                                            ->select('picture.file', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+                                                        $profileData = App\Models\admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
+                                                            ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                                                             ->find($id);
                                                     }
                                                 @endphp
                                                 <figure class="me-2 mb-0">
-                                                    <img src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                                    <img src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                                         style="object-fit: cover;" class="img-sm rounded-circle"
                                                         alt="profile">
                                                 </figure>
@@ -485,11 +485,11 @@
                             </div>
                             <div class="col-lg-3 ticket-content">
                                 <div style="text-align: center">
-                                    <img src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                    <img src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                         style="object-fit: cover;" class="wd-100 ht-100 rounded-circle" alt="profile">
                                     <div class="mt-3 mb-3">
-                                        <label class="h4 fw-bolder text-capitalize">John Doe</label>
-                                        <p class="text-muted">JohnDoe@gmail.com</p>
+                                        <label class="h4 fw-bolder text-capitalize">{{ $profileData->name }}</label>
+                                        <p class="text-muted">{{ $profileData->email }}</p>
                                     </div>
                                 </div>
                                 <hr>

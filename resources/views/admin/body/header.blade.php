@@ -213,23 +213,23 @@
             </li>
             @php
                 $id = Auth::user()->admin_id;
-                $profileData = App\Models\User::find($id);
+                $profileData = App\Models\admin::find($id);
                 if (!empty($profileData->picture_id)) {
-                    $profileData = App\Models\User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                        ->select('picture.file', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+                    $profileData = App\Models\admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
+                        ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                         ->find($id);
                 }
             @endphp
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <img style="object-fit: cover;" class="wd-30 ht-30 rounded-circle" src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}" alt="profile">
+                    <img style="object-fit: cover;" class="wd-30 ht-30 rounded-circle" src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}" alt="profile">
                 </a>
                 <div class="dropdown-menu p-0" aria-labelledby="profileDropdown">
                     <div class="d-flex flex-column align-items-center border-bottom px-5 py-3">
                         <div class="mb-3">
                             <img class="wd-80 ht-80 rounded-circle"
-                                src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                 alt="" style="object-fit: cover;">
                         </div>
                         <div class="text-center">

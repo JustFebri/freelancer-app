@@ -10,5 +10,11 @@ class freelancer_skill extends Model
     use HasFactory;
     protected $table = 'freelancer_skill';
     protected $primaryKey = 'freelancerskill_id';
-    protected $timestamps = false;
+    public $timestamps = false;
+
+    protected $fillable = [
+        'freelancerskill_id',
+        'freelancer_id',
+        'skill_id',
+    ];
 }

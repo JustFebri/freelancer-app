@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('client', function (Blueprint $table) {
-            $table->foreign('picture_id')
-                ->references('picture_id')
-                ->on('picture')
-                ->onDelete('cascade');
+        Schema::create('payments', function (Blueprint $table) {
+            $table->id('id');
+            $table->string('checkout_link');
+            $table->string('external_id');
+            $table->string('status');
+            $table->timestamps();
         });
     }
 
@@ -24,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('client', function (Blueprint $table) {
-            $table->dropForeign(['picture_id']);
-        });
+        Schema::dropIfExists('payments');
     }
 };

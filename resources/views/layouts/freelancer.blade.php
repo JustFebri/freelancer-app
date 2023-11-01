@@ -4,9 +4,15 @@
 
         <nav class="page-breadcrumb">
             <ol class="breadcrumb" style="display: flex; justify-content: flex-end;">
-                <button type="button" class="btn btn-primary" style="margin-right: 10px">
-                    <i data-feather="file-text" style="padding-right: 5px"></i> Freelancer Request
-                </button>
+                <a href="{{ route('freelancer.request') }}" class="btn btn-primary" role="button" style="margin-right: 20px; position: relative; ">
+                    <i data-feather="file-text" style="padding-right: 5px;"></i>Freelancer Request
+                    @if ($pendingFreelancerCount > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill badge-danger">
+                            {{ $pendingFreelancerCount }}
+                            <span class="visually-hidden">New Request</span>
+                        </span>
+                    @endif
+                </a>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddfreelancer">
                     <i data-feather="user-plus" style="padding-right: 5px"></i> Add Freelancer
                 </button>
@@ -72,7 +78,7 @@
                                         </div>
                                         <div class="mb-3">
                                             <label for="InputInformation" class="form-label">Freelancer Information</label>
-                                            <textarea name="information" id="InputInformation" class="form-control" maxlength="200" rows="4"
+                                            <textarea name="description" id="InputInformation" class="form-control" maxlength="200" rows="4"
                                                 placeholder="This textarea has a limit of 200 chars."></textarea>
                                         </div>
                                         <div class="mb-3">
@@ -125,6 +131,9 @@
                                         <th>Email</th>
                                         <th>Location</th>
                                         <th>NIK</th>
+                                        <th>Rating</th>
+                                        <th>Total Sales</th>
+                                        <th>Revenue</th>
                                         <th>Created at</th>
                                         <th>Updated at</th>
                                         <th>Status</th>
@@ -132,14 +141,15 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($type as $key => $item)
+                                    @foreach ($db_freelancer as $key => $item)
                                         <tr>
                                             <td>
-                                                <a href="{{ route('freelancer.profile', $item->freelancer_id) }}">Freelancer-{{ $item->freelancer_id }}</a>
+                                                <a
+                                                    href="{{ route('freelancer.profile', $item->freelancer_id) }}">Freelancer-{{ $item->freelancer_id }}</a>
                                             </td>
-                                            
+
                                             <td>
-                                                @if ($item->file == null)
+                                                @if ($item->picasset == null)
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
                                                         src="{{ url('backend/assets/images/no_image.jpg') }}"
@@ -147,7 +157,7 @@
                                                 @else
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
-                                                        src="{{ 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) }}"
+                                                        src="{{ asset($item->picasset) }}"
                                                         alt="profile" style="object-fit: cover; ">
                                                 @endif
                                                 <span>{{ $item->name }}</span>
@@ -161,6 +171,9 @@
                                                 @endif
                                             </td>
                                             <td>{{ $item->identity_number }}</td>
+                                            <td>{{ $item->rating }}</td>
+                                            <td>{{ $item->total_sales }}</td>
+                                            <td>{{ $item->revenue }}</td>
                                             <td>{{ $item->created_at }}</td>
                                             <td>{{ $item->updated_at }}</td>
                                             <td>{{ $item->status }}</td>
@@ -168,10 +181,10 @@
                                                 <a class="btn btn-inverse-warning" data-bs-toggle="modal"
                                                     data-bs-target="#modalEditfreelancer{{ $item->freelancer_id }}">Edit</a>
                                                 @if ($item->picture_id != null)
-                                                    <a href="{{ route('freelancer.delete.pic', ['freelancer_id' => $item->freelancer_id, 'picture_id' => $item->picture_id]) }}"
+                                                    <a href="{{ route('freelancer.delete.pic', ['freelancer_id' => $item->freelancer_id, 'user_id' => $item->user_id, 'picture_id' => $item->picture_id]) }}"
                                                         class="btn btn-inverse-danger" id="delete">Delete</a>
                                                 @else
-                                                    <a href="{{ route('freelancer.delete', $item->freelancer_id) }}"
+                                                    <a href="{{ route('freelancer.delete', ['freelancer_id' => $item->freelancer_id, 'user_id' => $item->user_id]) }}"
                                                         class="btn btn-inverse-danger" id="delete">Delete</a>
                                                 @endif
 
@@ -193,7 +206,7 @@
                                                             @csrf
                                                             <div class="modal-body">
                                                                 <input type="hidden" name="id"
-                                                                    value="{{ $item->freelancer_id }}">
+                                                                    value="{{ $item->user_id }}">
                                                                 <div class="mb-3">
                                                                     <label for="InputName{{ $item->freelancer_id }}"
                                                                         class="form-label">Name</label>
@@ -248,7 +261,7 @@
                                                                         for="InputInformation{{ $item->freelancer_id }}"
                                                                         class="form-label">Freelancer Information</label>
                                                                     <textarea name="information" id="InputInformation{{ $item->freelancer_id }}" class="form-control" maxlength="200"
-                                                                        rows="4" placeholder="This textarea has a limit of 200 chars.">{{ $item->information }}</textarea>
+                                                                        rows="4" placeholder="This textarea has a limit of 200 chars.">{{ $item->description }}</textarea>
                                                                 </div>
                                                                 <div class="mb-3">
                                                                     <label for="InputStatus{{ $item->freelancer_id }}"
@@ -281,7 +294,7 @@
                                                                         for="showImage{{ $item->freelancer_id }}"></label>
                                                                     <img id="showImage{{ $item->freelancer_id }}"
                                                                         class="wd-80 ht-80 rounded-circle border border-dark"
-                                                                        src="{{ !empty($item->file) ? 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) : url('backend/assets/images/no_image.jpg') }}"
+                                                                        src="{{ !empty($item->picasset) ? asset($item->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                                                         alt="profile" style="object-fit: cover;">
                                                                 </div>
                                                                 <script type="text/javascript">

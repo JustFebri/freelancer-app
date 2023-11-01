@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('service', function (Blueprint $table) {
             $table->increments('service_id');
+            $table->unsignedInteger('freelancer_id');
             $table->unsignedInteger('subcategory_id');
             $table->string('title');
             $table->text('description');

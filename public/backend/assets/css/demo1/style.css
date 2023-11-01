@@ -4776,8 +4776,8 @@ div.tox .btn-group-vertical > .btn-group:not(:first-child) > .tox-button,
   --bs-badge-padding-y: 0.35em;
   --bs-badge-font-size: 14px;
   --bs-badge-font-weight: 500;
-  --bs-badge-color: #7987a1; /* Set font color to black */
-  --bs-badge-background-color: #f2f2f2; /* Set background color to gray */
+  --bs-badge-color: #af233a; /* Set font color to black */
+  --bs-badge-background-color: #f9e1e5; /* Set background color to gray */
   --bs-badge-border-radius: 1rem;
   display: inline-block;
   padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);

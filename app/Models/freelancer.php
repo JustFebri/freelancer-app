@@ -12,35 +12,21 @@ class freelancer extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
     protected $table = 'freelancer';
     protected $primaryKey = 'freelancer_id';
+    public $timestamps = false;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'location',
-        'picture_id',
-        'status',
-        'updated_at',
+        'user_id',
         'identity_number',
-        'information'
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
+        'identity_name',
+        'identity_gender',
+        'identity_address',
+        'description',
+        'rating',
+        'total_sales',
+        'revenue',
+        'link',
+        'id_card',
+        'id_card_with_selfie',
+        'isApproved'
     ];
 }

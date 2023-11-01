@@ -35,19 +35,23 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(ClientController::class)->group(function () {
         Route::get('/client', 'client')->name('client');
-        Route::post('/client/store','clientStore')->name('client.store');
-        Route::post('/client/edit','clientEdit')->name('client.edit');
-        Route::get('/client/delete/{client_id}','clientDelete')->name('client.delete');
-        Route::get('/client/delete/{client_id}/{picture_id}','clientDeletePic')->name('client.delete.pic');
+        Route::post('/client/store', 'clientStore')->name('client.store');
+        Route::post('/client/edit', 'clientEdit')->name('client.edit');
+        Route::get('/client/delete/{client_id}/{user_id}', 'clientDelete')->name('client.delete');
+        Route::get('/client/delete/{client_id}/{user_id}/{picture_id}', 'clientDeletePic')->name('client.delete.pic');
     });
 
     Route::controller(FreelancerController::class)->group(function () {
         Route::get('/freelancer', 'freelancer')->name('freelancer');
-        Route::post('/freelancer/store','freelancerStore')->name('freelancer.store');
-        Route::post('/freelancer/edit','freelancerEdit')->name('freelancer.edit');
-        Route::get('/freelancer/delete/{freelancer_id}','freelancerDelete')->name('freelancer.delete');
-        Route::get('/freelancer/delete/{freelancer_id}/{picture_id}','freelancerDeletePic')->name('freelancer.delete.pic');
+        Route::post('/freelancer/store', 'freelancerStore')->name('freelancer.store');
+        Route::post('/freelancer/edit', 'freelancerEdit')->name('freelancer.edit');
+        Route::get('/freelancer/delete/{freelancer_id}/{user_id}', 'freelancerDelete')->name('freelancer.delete');
+        Route::get('/freelancer/delete/{freelancer_id}/{user_id}/{picture_id}', 'freelancerDeletePic')->name('freelancer.delete.pic');
         Route::get('/freelancer/profile/{freelancer_id}', 'freelancerProfile')->name('freelancer.profile');
+        Route::get('/freelancer/request', 'freelancerRequest')->name('freelancer.request');
+        Route::get('/freelancer/request/{freelancer_id}', 'freelancerRequestDetails')->name('freelancer.request.details');
+        Route::post('/freelancer/request/{user_id}/{freelancer_id}/approve', 'requestApprove')->name('freelancer.request.approve');
+        Route::post('/freelancer/request/{user_id}/{freelancer_id}/reject', 'requestReject')->name('freelancer.request.reject');
     });
 
     Route::controller(ServiceController::class)->group(function () {
@@ -63,4 +67,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

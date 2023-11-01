@@ -5,58 +5,82 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\RegisterClientRequest;
 use App\Http\Requests\API\RegisterFreelancerRequest;
+use App\Http\Requests\API\RegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\client;
 use App\Models\freelancer;
 use App\Models\picture;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function registerClient(RegisterClientRequest $request)
+    public function register(RegisterRequest $request)
     {
         $request->validated();
-
         $location = $request->location ?? '';
+        $currentTimestamp = Carbon::now();
 
-        $clientData = [
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'location' => $location,
             'picture_id' => null,
-            'status' =>  'active',
+            'status' => 'active',
             'email_verified_at' => null,
-            'remember_token' => null
+            'remember_token' => null,
+            'profile_type' => 'client',
+            'last_login' => $currentTimestamp,
         ];
 
-        $client = client::create($clientData);
-        $token = $client->createToken('freelancer-app')->plainTextToken;
+        $user = User::create($userData);
+        
+        $token = $user->createToken('freelancer-app')->plainTextToken;
+
+        client::create([
+            'user_id' => $user->user_id,
+            'orders_made' => 0,
+            'total_spent' => 0,
+        ]);
 
         return response([
-            'client' => $client,
+            'user' => $user,
             'token' => $token
         ], 201);
     }
 
-    public function loginClient(LoginRequest $request)
+    public function login(LoginRequest $request)
     {
         $request->validated();
 
-        $client = client::whereEmail($request->email)->first();
-        if (!$client || !Hash::check($request->password, $client->password)) {
+        $user = User::whereEmail($request->email)->first();
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response([
                 'message' => 'Invalid Credentials',
             ], 422);
         }
 
-        $token = $client->createToken('freelancer-app')->plainTextToken;
+        $token = $user->createToken('freelancer-app')->plainTextToken;
+        $currentTimestamp = Carbon::now();
+        $user->last_login = $currentTimestamp;
+        $user->save();
 
         return response([
-            'client' => $client,
+            'user' => $user,
             'token' => $token
-        ], 201);
+        ], 200);
+    }
+
+    public function logout(Request $request){
+        $request->user()->currentAccessToken()->delete();
+
+        return response([
+            'message' => 'User successfully logged out',
+        ], 200);
     }
 
     // public function registerFreelancer(RegisterFreelancerRequest $request)
@@ -81,25 +105,6 @@ class AuthController extends Controller
 
     //     return response([
     //         'client' => $freelancerData,
-    //     ], 201);
-    // }
-
-    // public function loginFreelancer(LoginRequest $request)
-    // {
-    //     $request->validated();
-
-    //     $freelancer = freelancer::whereEmail($request->email)->first();
-    //     if (!$freelancer || !Hash::check($request->password, $freelancer->password)) {
-    //         return response([
-    //             'message' => 'Invalid Credentials',
-    //         ], 422);
-    //     }
-
-    //     $token = $freelancer->createToken('freelancer-app')->plainTextToken;
-
-    //     return response([
-    //         'freelancer' => $freelancer,
-    //         'token' => $token
     //     ], 201);
     // }
 }

@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('verification_request', function (Blueprint $table) {
-            $table->increments('request_id');
-            $table->unsignedInteger('freelancer_id');
-            $table->binary('picture');
-            $table->timestamps();
+        Schema::table('freelancer', function (Blueprint $table) {
+            $table->foreign('user_id')
+                ->references('user_id')
+                ->on('user')
+                ->onDelete('cascade');
         });
     }
 
@@ -24,6 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('verification_request');
+        Schema::table('freelancer', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+        });
     }
 };

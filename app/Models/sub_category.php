@@ -10,4 +10,5 @@ class sub_category extends Model
     use HasFactory;
     protected $table = 'sub_category';
     protected $primaryKey = 'subcategory_id';
+    public $timestamps = false;
 }

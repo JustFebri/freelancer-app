@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\picture;
-use App\Models\User;
+use App\Models\admin;
 use Carbon\Traits\Timestamp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,24 +12,25 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display the admin's profile form.
      */
     public function profile()
     {
         $id = Auth::user()->admin_id;
-        $profileData = User::find($id);
+        $profileData = admin::find($id);
 
 
         if (empty($profileData->picture_id)) {
             return view('admin.profile', compact('profileData'));
         } else {
-            $profileData = User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                ->select('picture.file', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+            $profileData = admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
+                ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                 ->find($id);
             return view('admin.profile', compact('profileData'));
         };
@@ -38,25 +39,28 @@ class ProfileController extends Controller
     public function profileStore(Request $request)
     {
         $id = Auth::user()->admin_id;
-        $profileData = User::find($id);
+        $profileData = admin::find($id);
         $currentTimestamp = Carbon::now();
 
         if ($request->file('photo')) {
             if (!empty($profileData->picture_id)) {
                 $profileData->email = $request->email;
-                $data = User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                    ->select('picture.file', 'admin.picture_id', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+                $data = admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
+                    ->select('admin.picture_id', 'picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                     ->find($id);
 
-                $oldPic = picture::find($data->picture_id);
+                $filename = basename($data->picasset);
+                Storage::delete('public/images/' . $filename);
 
                 $file = $request->file('photo');
+                $file->store('public/images');
+                $filename = $request->file('photo')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
 
                 picture::findOrFail($data->picture_id)->update([
-                    'filename' => date('YmDHi') . $file->getClientOriginalName(),
-                    'filetype' => $file->getMimeType(),
-                    'file' => $file->getContent(),
-                    'updated_at' => $currentTimestamp,
+                    'piclink' => $url,
+                    'picasset' => Storage::url($path),
                 ]);
 
                 $profileData->save();
@@ -67,14 +71,17 @@ class ProfileController extends Controller
                 );
                 return redirect()->back()->with($notification);
             } else {
-                $profileData->email = $request->email;
-                $file = $request->file('photo');
-                $filename = date('YmDHi') . $file->getClientOriginalName();
+                $request->file('photo')->store('public/images');
+                $filename = $request->file('photo')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+
                 $newPicture = new picture;
-                $newPicture->filename = $filename;
-                $newPicture->file = $file->getContent();
-                $newPicture->filetype = $file->getMimeType();
+                $newPicture->piclink = $url;
+                $newPicture->picasset = Storage::url($path);
                 $newPicture->save();
+
+                $profileData->email = $request->email;
                 $profileData->picture_id = $newPicture->picture_id;
                 $profileData->save();
                 $notification = array(
@@ -97,19 +104,20 @@ class ProfileController extends Controller
     function changePassword(Request $request)
     {
         $id = Auth::user()->admin_id;
-        $profileData = User::find($id);
+        $profileData = admin::find($id);
         if (empty($profileData->picture_id)) {
             return view('admin.change_password', compact('profileData'));
         } else {
-            $profileData = User::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                ->select('picture.file', 'picture.filetype', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+            $profileData = admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
+                ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                 ->find($id);
             return view('admin.change_password', compact('profileData'));
         };
     }
 
-    function updatePassword(Request $request){
-        
+    function updatePassword(Request $request)
+    {
+
         // Validation
         $request->validate([
             'old_password' => 'required',
@@ -117,21 +125,21 @@ class ProfileController extends Controller
         ]);
 
         // Match The Old Password
-        if(!Hash::check($request->old_password, auth::user()->password)){
+        if (!Hash::check($request->old_password, auth::user()->password)) {
             $notification = array(
-                'message'=> 'Old Password Does not Match!',
+                'message' => 'Old Password Does not Match!',
                 'alert-type' => 'error'
             );
             return back()->with($notification);
         }
 
         // Update The New Password
-        User::where('admin_id', auth()->user()->admin_id)->update([
+        admin::where('admin_id', auth()->user()->admin_id)->update([
             'password' => Hash::make($request->new_password)
         ]);
 
         $notification = array(
-            'message'=> 'Password Change Successfully',
+            'message' => 'Password Change Successfully',
             'alert-type' => 'success'
         );
         return back()->with($notification);

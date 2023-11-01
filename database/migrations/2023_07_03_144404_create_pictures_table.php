@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('picture', function (Blueprint $table) {
             $table->increments('picture_id');
-            $table->string('filename');
-            $table->string('filetype');
-            $table->binary('file');
+            $table->string('piclink');
+            $table->string('picasset');
             $table->timestamps();
         });
 
