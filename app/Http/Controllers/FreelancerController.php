@@ -8,7 +8,7 @@ use App\Mail\RejectEmail;
 use App\Models\client;
 use App\Models\freelancer;
 use App\Models\picture;
-use App\Models\User;
+use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -27,13 +27,13 @@ class FreelancerController extends Controller
             ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.total_sales', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where(function ($query) {
                 $query->where('f.IsApproved', '=', 'approved')
-                    ->orWhereNull('f.IsApproved'); // Include records where IsApproved is NULL
+                    ->orWhereNull('f.IsApproved');
             })
             ->latest()
             ->get();
 
         $pendingFreelancerCount = DB::table('freelancer as f')
-            ->where('f.IsApproved', '=', 'Pending')
+            ->where('f.IsApproved', '=', 'pending')
             ->count();
 
         return view('layouts.freelancer', compact('db_freelancer', 'pendingFreelancerCount'));
@@ -160,7 +160,7 @@ class FreelancerController extends Controller
     {
         freelancer::findOrFail($freelancer_id)->delete();
         DB::table('client')->where('user_id', $user_id)->delete();
-        User::findOrFail($user_id)->delete();
+        user::findOrFail($user_id)->delete();
 
         $notification = array(
             'message' => 'Freelancer Deleted Successfully',
@@ -357,13 +357,16 @@ class FreelancerController extends Controller
                 'u.profile_type',
                 'f.id_card',
                 'f.id_card_with_selfie',
-                'p1.file as p1f',
-                'p1.filetype as p1ft',
-                'p2.file as p2f',
-                'p2.filetype as p2ft'
+                'p1.picasset as p1',
+                'p2.picasset as p2',
             )
             ->where('f.freelancer_id', $freelancer_id)
             ->first();
+
+        $language = DB::table('freelancer_language as fl')
+            ->leftJoin('language as l', 'l.language_id', '=', 'fl.language_id')
+            ->where('fl.freelancer_id', $freelancer_id)
+            ->get();
 
         $occupation = DB::table('freelancer as f')
             ->leftJoin('occupation as o', 'o.freelancer_id', '=', 'f.freelancer_id')
@@ -383,7 +386,7 @@ class FreelancerController extends Controller
             ->where('f.freelancer_id', $freelancer_id)
             ->get();
 
-        return view('layouts.verificationRequestDetails', compact('freelancer', 'occupation', 'sub_occupation', 'skills'));
+        return view('layouts.freelancerRequestDetails', compact('freelancer', 'occupation', 'sub_occupation', 'skills', 'language'));
     }
 
     public function requestApprove($user_id, $freelancer_id)
@@ -401,7 +404,7 @@ class FreelancerController extends Controller
             $user->save();
             $freelancer->IsApproved = 'approved';
             $freelancer->save();
-            Mail::to('febri.k150201@gmail.com')->send(new ApproveEmail($user->name));
+            Mail::to($user->email)->send(new ApproveEmail($user->name));
             $notification = array(
                 'message' => 'Request Approved Successfully',
                 'alert-type' => 'success'
@@ -424,7 +427,7 @@ class FreelancerController extends Controller
         } else {
             $freelancer->IsApproved = 'rejected';
             $freelancer->save();
-            Mail::to('febri.k150201@gmail.com')->send(new RejectEmail($user->name));
+            Mail::to($user->email)->send(new RejectEmail($user->name));
             $notification = array(
                 'message' => 'Request Rejected Successfully',
                 'alert-type' => 'success'

@@ -17,7 +17,7 @@ return new class extends Migration
                 ->on('freelancer')
                 ->onDelete('cascade');
 
-                $table->foreign('category_id')
+            $table->foreign('category_id')
                 ->references('category_id')
                 ->on('category')
                 ->onDelete('cascade');

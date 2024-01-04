@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\client;
 use App\Models\picture;
-use App\Models\User;
+use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;

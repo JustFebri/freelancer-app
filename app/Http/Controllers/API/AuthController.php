@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\LoginRequest;
 use App\Http\Requests\API\RegisterClientRequest;
 use App\Http\Requests\API\RegisterFreelancerRequest;
 use App\Http\Requests\API\RegisterRequest;
-use App\Http\Requests\Auth\LoginRequest;
+
 use App\Models\client;
 use App\Models\freelancer;
 use App\Models\picture;
-use App\Models\User;
+use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -37,8 +38,8 @@ class AuthController extends Controller
             'last_login' => $currentTimestamp,
         ];
 
-        $user = User::create($userData);
-        
+        $user = user::create($userData);
+
         $token = $user->createToken('freelancer-app')->plainTextToken;
 
         client::create([
@@ -57,7 +58,7 @@ class AuthController extends Controller
     {
         $request->validated();
 
-        $user = User::whereEmail($request->email)->first();
+        $user = user::whereEmail($request->email)->first();
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response([
                 'message' => 'Invalid Credentials',
@@ -69,42 +70,21 @@ class AuthController extends Controller
         $user->last_login = $currentTimestamp;
         $user->save();
 
+        $picture = picture::where('picture_id', '=', $user->picture_id)->first();
+
         return response([
             'user' => $user,
+            'picture' => $picture ? $picture->picasset : null,
             'token' => $token
         ], 200);
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
 
         return response([
             'message' => 'User successfully logged out',
         ], 200);
     }
-
-    // public function registerFreelancer(RegisterFreelancerRequest $request)
-    // {
-    //     $request->validated();
-
-    //     $location = $request->location ?? '';
-
-    //     $freelancerData = [
-    //         'name' => $request->name,
-    //         'email' => $request->email,
-    //         'password' => Hash::make($request->password),
-    //         'location' => $location,
-    //         'picture_id' => $request->picture,
-    //         'status' => $request->status,
-    //         'information' => $request->information,
-    //         'identity_number' => $request->identity_number
-    //     ];
-
-    //     // $client = client::create($freelancerData);
-    //     // $token = $client->createToken('freelancer-app')->plainTextToken;
-
-    //     return response([
-    //         'client' => $freelancerData,
-    //     ], 201);
-    // }
 }

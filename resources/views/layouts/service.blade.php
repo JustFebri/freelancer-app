@@ -4,9 +4,16 @@
 
         <nav class="page-breadcrumb">
             <ol class="breadcrumb" style="display: flex; justify-content: flex-end;">
-                <button type="button" class="btn btn-primary" style="margin-right: 10px">
-                    <i data-feather="file-text" style="padding-right: 5px"></i> Service Request
-                </button>
+
+                <a href="{{ route('service.request') }}" class="btn btn-primary" role="button" style="margin-right: 20px; position: relative; ">
+                    <i data-feather="file-text" style="padding-right: 5px;"></i>Service Request
+                    @if ($pendingServiceCount > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill badge-danger">
+                            {{ $pendingServiceCount }}
+                            <span class="visually-hidden">New Request</span>
+                        </span>
+                    @endif
+                </a>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddClient">
                     <i data-feather="file-plus" style="padding-right: 5px"></i> Add Service
                 </button>
@@ -69,9 +76,10 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Product</th>
-                                        <th>Category</th>
                                         <th>Freelancer</th>
-                                        <th>Price</th>
+                                        <th>Type</th>
+                                        <th>Category</th>
+                                        <th>Sub Category</th>
                                         <th>Status</th>
                                         <th>Created At</th>
                                         <th>Updated At</th>
@@ -80,25 +88,56 @@
                                 </thead>
                                 <tbody>
 
-                                    <tr>
-                                        <td><a href="#">Product-001</a></td>
-                                        <td>
-                                            <img style="object-fit: cover;"
-                                                src="https://fiverr-res.cloudinary.com/images/t_smartwm/t_main1,q_auto,f_auto,q_auto,f_auto/attachments/delivery/asset/f8cf0e0d6a01c51cb75aa4fab2644b50-1679520154/recursivefaults_hipinspire/design-a-creative-and-unique-mobile-app.png"
-                                                class="rounded me-2" alt="profile-image">
-                                            <span>I will do mobile app ui ux design</span>
-                                        </td>
-                                        <td>App Design</td>
-                                        <td><a href="#">Denis Kravets</a></td>
-                                        <td>Rp 4.500.000</td>
-                                        <td>Active</td>
-                                        <td>2023-07-09 18:06:58</td>
-                                        <td>2023-07-13 12:44:33</td>
-                                        <td>
-                                            <a href="" class="btn btn-inverse-warning">Edit</a>
-                                            <a href="" class="btn btn-inverse-danger">Delete</a>
-                                        </td>
-                                    </tr>
+                                    @foreach ($db_service as $key => $item)
+                                        <tr>
+                                            <td><a href="#">Product-{{ $item->service_id }}</a></td>
+
+                                            <td>
+                                                @php
+                                                    $imageCount = App\Models\service_img::where('service_id', $item->service_id)->count();
+                                                    if ($imageCount > 0) {
+                                                        $count = 1;
+                                                        $imageData = App\Models\service_img::join('picture as p', 'service_img.picture_id', '=', 'p.picture_id')
+                                                        ->where('service_img.service_id', '=', $item->service_id)
+                                                        ->first();
+                                                    } else {
+                                                        $count = 0;
+                                                    }
+                                                @endphp
+                                                @if ($count == 0)
+                                                    <img id="showImage"
+                                                        class="wd-80 ht-80 rounded-circle border border-dark me-3"
+                                                        src="{{ url('backend/assets/images/no_image.jpg') }}" alt="profile"
+                                                        style="object-fit: cover; ">
+                                                @else
+                                                    <img id="showImage"
+                                                        class="wd-80 ht-80 rounded-circle border border-dark me-3"
+                                                        src="{{ asset($imageData->picasset) }}" alt="profile"
+                                                        style="object-fit: cover; ">
+                                                @endif
+                                                <span>{{ $item->title }}</span>
+                                            </td>
+                                            <td><a
+                                                    href="{{ route('freelancer.profile', $item->freelancer_id) }}">{{ $item->name }}</a>
+                                            </td>
+                                            <td>{{ $item->type }}</td>
+                                            <td>{{ $item->category_name }}</td>
+                                            <td>{{ $item->subcategory_name }}</td>
+                                            <td>
+                                                @if ($item->status == null)
+                                                    Null
+                                                @else
+                                                    {{ $item->status }}
+                                                @endif
+                                            </td>
+                                            <td>{{ $item->created_at }}</td>
+                                            <td>{{ $item->updated_at }}</td>
+                                            <td>
+                                                <a href="" class="btn btn-inverse-warning">Edit</a>
+                                                <a href="" class="btn btn-inverse-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
 
                                 </tbody>
                             </table>

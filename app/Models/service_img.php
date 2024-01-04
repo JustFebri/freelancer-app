@@ -10,5 +10,10 @@ class service_img extends Model
     use HasFactory;
     protected $table = 'service_img';
     protected $primaryKey = 'serviceImg_id';
-    protected $timestamps = false;
+    public $timestamps = false;
+
+    protected $fillable = [
+        'service_id',
+        'picture_id',
+    ];
 }

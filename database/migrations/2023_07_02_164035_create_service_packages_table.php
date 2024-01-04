@@ -19,7 +19,6 @@ return new class extends Migration
             $table->decimal('price', 10, 0);
             $table->unsignedInteger('revision');
             $table->unsignedInteger('delivery_days');
-            $table->string('custom_order');
             $table->timestamps();
         });
     }

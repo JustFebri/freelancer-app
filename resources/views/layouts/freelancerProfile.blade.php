@@ -40,9 +40,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center p-3 rounded-bottom">
-
-                    </div>
+                 
                 </div>
             </div>
         </div>

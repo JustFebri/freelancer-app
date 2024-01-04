@@ -36,7 +36,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-2">
                                             <div>
                                                 <img class="img-thumbnail"
-                                                    src=" {{ !empty($freelancer->file) ? 'data:' . $freelancer->filetype . ';base64,' . base64_encode($freelancer->file) : url('backend/assets/images/no_image.jpg') }}"
+                                                    src="{{ !empty($freelancer->picasset) ? asset($freelancer->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                                     alt="profile" style="object-fit: cover; height: 300px; width:300px">
                                             </div>
                                         </div>
@@ -52,9 +52,10 @@
                                         <hr>
                                         <div class="mt-3">
                                             <label class="fw-bolder mb-2" style="font-size: 16px">Language</label>
-                                            <p class="mb-2">English - <span class="text-muted">Conversational</span></p>
-                                            <p class="mb-2">English - <span class="text-muted">Conversational</span></p>
-                                            <p class="mb-2">English - <span class="text-muted">Conversational</span></p>
+                                            @foreach ($language as $key => $item)
+                                                <p class="mb-2">{{$item->language_name}} - <span class="text-muted">{{$item->proficiency_level}}</span>
+                                                </p>
+                                            @endforeach
                                         </div>
                                         <hr>
                                         <div class="mt-3">
@@ -120,14 +121,14 @@
                                                 <label class="form-label text-muted">KTP Picture</label>
                                                 <br>
                                                 <img class="rounded "
-                                                    src=" {{ !empty($freelancer->p1f) ? 'data:' . $freelancer->p1ft . ';base64,' . base64_encode($freelancer->p1f) : url('https://placehold.co/500x500') }}"
+                                                    src=" {{ !empty($freelancer->p1) ? asset($freelancer->p1) : url('https://placehold.co/500x500') }}"
                                                     alt="ktpSelfie" style="max-width: 100%; max-height: 300px;">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label text-muted">KTP Picture with Selfie</label>
                                                 <br>
                                                 <img class="rounded "
-                                                    src=" {{ !empty($freelancer->p2f) ? 'data:' . $freelancer->p2ft . ';base64,' . base64_encode($freelancer->p2f) : url('https://placehold.co/500x500') }}"
+                                                    src=" {{ !empty($freelancer->p2) ? asset($freelancer->p2) : url('https://placehold.co/500x500') }}"
                                                     alt="ktp"
                                                     style="img-thumbnail max-width: 100%; max-height: 300px;">
                                             </div>

@@ -48,13 +48,15 @@ class PaymentController extends Controller
         $apiInstance = new InvoiceApi();
         $createInvoice = $apiInstance->createInvoice($params);
 
-        $payment = new Payment;
+        $payment = new payment;
         $payment->status = 'pending';
         $payment->checkout_link =  $createInvoice['invoice_url'];
         $payment->external_id = $params['external_id'];
         $payment->save();
 
-        return response()->json(['data' => $createInvoice['invoice_url']]);
+        return response([
+            'data' => $createInvoice['invoice_url']
+        ], 200);
     }
 
     public function webhook(Request $request)

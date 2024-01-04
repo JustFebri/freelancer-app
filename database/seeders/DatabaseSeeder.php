@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             'Data',
             'Photography',
             'Lifestyle',
+            'Other'
         ];
 
         $subData = [
@@ -243,7 +244,7 @@ class DatabaseSeeder extends Seeder
                 "Traveling",
                 "Trend Forecasting",
                 "Wellness",
-            ]
+            ], ["Other",],
         ];
 
         foreach ($data as $index => $value) {

@@ -1,11 +1,13 @@
 <?php
 
+use App\Events\HelloEvent;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FreelancerController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+Route::get('/send-event', function () {
+    broadcast(new \App\Events\HelloEvent());
 });
 
 Route::get('/dashboard', function () {
@@ -48,14 +54,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/freelancer/delete/{freelancer_id}/{user_id}', 'freelancerDelete')->name('freelancer.delete');
         Route::get('/freelancer/delete/{freelancer_id}/{user_id}/{picture_id}', 'freelancerDeletePic')->name('freelancer.delete.pic');
         Route::get('/freelancer/profile/{freelancer_id}', 'freelancerProfile')->name('freelancer.profile');
+
         Route::get('/freelancer/request', 'freelancerRequest')->name('freelancer.request');
         Route::get('/freelancer/request/{freelancer_id}', 'freelancerRequestDetails')->name('freelancer.request.details');
-        Route::post('/freelancer/request/{user_id}/{freelancer_id}/approve', 'requestApprove')->name('freelancer.request.approve');
-        Route::post('/freelancer/request/{user_id}/{freelancer_id}/reject', 'requestReject')->name('freelancer.request.reject');
+        Route::post('/freelancer/request/{user_id}/approve/{freelancer_id}', 'requestApprove')->name('freelancer.request.approve');
+        Route::post('/freelancer/request/{user_id}/reject/{freelancer_id}', 'requestReject')->name('freelancer.request.reject');
     });
 
     Route::controller(ServiceController::class)->group(function () {
         Route::get('/service', 'service')->name('service');
+        Route::get('/service/request', 'serviceRequest')->name('service.request');
+        Route::get('/service/request/{service_id}', 'serviceRequestDetails')->name('service.request.details');
+        Route::post('/service/request/approve/{service_id}', 'requestApprove')->name('service.request.approve');
+        Route::post('/service/request/reject/{service_id}', 'requestReject')->name('service.request.reject');
     });
 
     Route::controller(OrderController::class)->group(function () {
@@ -64,6 +75,7 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(ReportController::class)->group(function () {
         Route::get('/report', 'report')->name('report');
+        Route::put('/report/{report_id}/{status}','changeReportStatus')->name('report.status');
     });
 });
 

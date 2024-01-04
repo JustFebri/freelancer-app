@@ -18,11 +18,13 @@ class service extends Model
         'title',
         'description',
         'location',
-        'offline',
+        'type',
         'status',
+        'custom_order',
+        'IsApproved',
     ];
 
     public function user(){
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(user::class);
     }
 }

@@ -31,7 +31,7 @@
                                             </td>
 
                                             <td>
-                                                @if ($item->file == null)
+                                                @if ($item->picasset == null)
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
                                                         src="{{ url('backend/assets/images/no_image.jpg') }}" alt="profile"
@@ -39,7 +39,7 @@
                                                 @else
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
-                                                        src="{{ 'data:' . $item->filetype . ';base64,' . base64_encode($item->file) }}"
+                                                        src="{{ asset($item->picasset)  }}"
                                                         alt="profile" style="object-fit: cover; ">
                                                 @endif
                                                 <span>{{ $item->name }}</span>

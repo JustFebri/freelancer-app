@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chat_room', function (Blueprint $table) {
-            $table->increments('chatroom_id');
-            $table->unsignedInteger('client_id');
-            $table->unsignedInteger('freelancer_id');
+        Schema::table('service', function (Blueprint $table) {
+            $table->string('IsApproved')->nullable();
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('chat_room');
+        Schema::table('service', function (Blueprint $table) {
+            $table->dropColumn('IsApproved');
+        });
     }
 };

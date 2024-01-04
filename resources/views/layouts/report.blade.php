@@ -7,7 +7,7 @@
                     <div class="card-body">
                         <div class="row position-relative">
                             <div class="col-lg-3 chat-aside border-end-lg">
-                                <div class="aside-content">
+                                <div class="aside-content" style="height: 100%; display: flex; flex-direction: column">
                                     <div class="aside-header">
                                         <div class="d-flex justify-content-between align-items-center pb-2 mb-2">
                                             <div class="d-flex align-items-center">
@@ -48,287 +48,85 @@
                                             </div>
                                         </form>
                                     </div>
-                                    <div class="aside-body">
-                                        <div class="tab-content mt-3">
-                                            <div class="tab-pane  active ps ps--active-y" id="chats" role="tabpanel"
-                                                aria-labelledby="chats-tab">
-                                                <div>
-                                                    <ul class="list-unstyled chat-list px-1">
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body fw-bolder">John Doe</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">4:32 PM</p>
-                                                                        <div class="badge rounded-pill bg-primary ms-auto">
-                                                                            5</div>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status offline"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body fw-bolder">Carl Henson</p>
+                                    @if ($type->isEmpty())
+                                        <div class="noticket"
+                                            style="flex: 1;display:flex; justify-content: center; align-items: center; text-align: center;">
+                                            <p>No ticket Yet</p>
+                                        </div>
+                                    @else
+                                        <div class="aside-body">
+                                            <div class="tab-content mt-1">
+                                                <div class="tab-pane  active ps ps--active-y" id="chats" role="tabpanel"
+                                                    aria-labelledby="chats-tab">
+                                                    <div>
+                                                        <div class="list-group">
+                                                            @foreach ($type as $key => $item)
+                                                                <a href="javascript:;"
+                                                                    onclick="selectReport(this, {{ json_encode($item) }})"
+                                                                    class="list-group-item">
+                                                                    <div class="col" style="">
                                                                         <div class="d-flex align-items-center">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                                                width="24" height="24"
-                                                                                viewBox="0 0 24 24" fill="none"
-                                                                                stroke="currentColor" stroke-width="2"
-                                                                                stroke-linecap="round"
-                                                                                stroke-linejoin="round"
-                                                                                class="feather feather-image text-muted icon-md mb-2px">
-                                                                                <rect x="3" y="3"
-                                                                                    width="18" height="18"
-                                                                                    rx="2" ry="2"></rect>
-                                                                                <circle cx="8.5" cy="8.5"
-                                                                                    r="1.5"></circle>
-                                                                                <polyline points="21 15 16 10 5 21">
-                                                                                </polyline>
-                                                                            </svg>
-                                                                            <p class="text-muted ms-1">Photo</p>
+                                                                            <div class="col-md-auto me-2">
+                                                                                <img src="{{ !empty($item->picasset) ? asset($item->picasset) : url('backend/assets/images/no_image.jpg') }}"
+                                                                                    class="img-xs rounded-circle"
+                                                                                    alt="user"
+                                                                                    style="object-fit: cover;">
+                                                                            </div>
+                                                                            <div class="col" style="padding-left: 0;">
+                                                                                <p class="text-body fw-bolder">
+                                                                                    {{ $item->name }}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div class="col-md-auto"
+                                                                                style="padding-right: 0;">
+                                                                                <p class="text-muted tx-13 mb-1">
+                                                                                    {{ $item->updated_at }}
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">05:24 PM</p>
-                                                                        <div class="badge rounded-pill bg-danger ms-auto">3
+                                                                        <div class="row">
+                                                                            <div class="col">
+                                                                                <p class="text-muted tx-13"
+                                                                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                                                    {{ $item->description }}
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status offline"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">John Doe</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">Yesterday</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">Jensen Combs</p>
-                                                                        <div class="d-flex align-items-center">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                                                width="24" height="24"
-                                                                                viewBox="0 0 24 24" fill="none"
-                                                                                stroke="currentColor" stroke-width="2"
-                                                                                stroke-linecap="round"
-                                                                                stroke-linejoin="round"
-                                                                                class="feather feather-video text-muted icon-md mb-2px">
-                                                                                <polygon points="23 7 16 12 23 17 23 7">
-                                                                                </polygon>
-                                                                                <rect x="1" y="5"
-                                                                                    width="15" height="14"
-                                                                                    rx="2" ry="2"></rect>
-                                                                            </svg>
-                                                                            <p class="text-muted ms-1">Video</p>
+                                                                        @if($item->status == 'open')
+                                                                        <div
+                                                                            class="badge rounded-pill text-capitalize open mt-1">
+                                                                            {{ $item->status }}
                                                                         </div>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">2 days ago</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status offline"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">Yaretzi Mayo</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">4 week ago</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status offline"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body fw-bolder">John Doe</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">4:32 PM</p>
-                                                                        <div class="badge rounded-pill bg-primary ms-auto">
-                                                                            5</div>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body fw-bolder">Leonardo Payne</p>
-                                                                        <div class="d-flex align-items-center">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                                                width="24" height="24"
-                                                                                viewBox="0 0 24 24" fill="none"
-                                                                                stroke="currentColor" stroke-width="2"
-                                                                                stroke-linecap="round"
-                                                                                stroke-linejoin="round"
-                                                                                class="feather feather-image text-muted icon-md mb-2px">
-                                                                                <rect x="3" y="3"
-                                                                                    width="18" height="18"
-                                                                                    rx="2" ry="2"></rect>
-                                                                                <circle cx="8.5" cy="8.5"
-                                                                                    r="1.5"></circle>
-                                                                                <polyline points="21 15 16 10 5 21">
-                                                                                </polyline>
-                                                                            </svg>
-                                                                            <p class="text-muted ms-1">Photo</p>
+                                                                        @elseif($item->status == 'closed')
+                                                                        <div
+                                                                            class="badge rounded-pill text-capitalize closed mt-1">
+                                                                            {{ $item->status }}
                                                                         </div>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">6:11 PM</p>
-                                                                        <div class="badge rounded-pill bg-danger ms-auto">3
+                                                                        @else
+                                                                        <div
+                                                                            class="badge rounded-pill text-capitalize in-progress mt-1">
+                                                                            {{ $item->status }}
                                                                         </div>
+                                                                        @endif
                                                                     </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">John Doe</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">Yesterday</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">Leonardo Payne</p>
-                                                                        <div class="d-flex align-items-center">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                                                width="24" height="24"
-                                                                                viewBox="0 0 24 24" fill="none"
-                                                                                stroke="currentColor" stroke-width="2"
-                                                                                stroke-linecap="round"
-                                                                                stroke-linejoin="round"
-                                                                                class="feather feather-video text-muted icon-md mb-2px">
-                                                                                <polygon points="23 7 16 12 23 17 23 7">
-                                                                                </polygon>
-                                                                                <rect x="1" y="5"
-                                                                                    width="15" height="14"
-                                                                                    rx="2" ry="2"></rect>
-                                                                            </svg>
-                                                                            <p class="text-muted ms-1">Video</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">2 days ago</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                        <li class="chat-item pe-1">
-                                                            <a href="javascript:;" class="d-flex align-items-center">
-                                                                <figure class="mb-0 me-2">
-                                                                    <img src="https://via.placeholder.com/37x37"
-                                                                        class="img-xs rounded-circle" alt="user">
-                                                                    <div class="status online"></div>
-                                                                </figure>
-                                                                <div
-                                                                    class="d-flex justify-content-between flex-grow-1 border-bottom">
-                                                                    <div>
-                                                                        <p class="text-body">John Doe</p>
-                                                                        <p class="text-muted tx-13">Hi, How are you?</p>
-                                                                    </div>
-                                                                    <div class="d-flex flex-column align-items-end">
-                                                                        <p class="text-muted tx-13 mb-1">4 week ago</p>
-                                                                    </div>
-                                                                </div>
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                                <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
-                                                    <div class="ps__thumb-x" tabindex="0"
-                                                        style="left: 0px; width: 0px;"></div>
-                                                </div>
-                                                <div class="ps__rail-y" style="top: 0px; height: 576px; right: 0px;">
-                                                    <div class="ps__thumb-y" tabindex="0"
-                                                        style="top: 0px; height: 482px;"></div>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
+                                                        <div class="ps__thumb-x" tabindex="0"
+                                                            style="left: 0px; width: 0px;"></div>
+                                                    </div>
+                                                    <div class="ps__rail-y" style="top: 0px; height: auto; right: 0px;">
+                                                        <div class="ps__thumb-y" tabindex="0"
+                                                            style="top: 0px; height: auto;"></div>
+                                                    </div>
                                                 </div>
                                             </div>
+
                                         </div>
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
                             <div class="col-lg-6 chat-content border-end-lg">
@@ -337,7 +135,7 @@
                                         <h5>Error message on login</h3>
                                     </div>
                                 </div>
-                                <div class="chat-body ps ps--active-y" id="chatBody">
+                                <div class="chat-body ps ps--active-y">
                                     <ul class="messages">
                                         <li class="message-item friend">
                                             <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
@@ -485,36 +283,58 @@
                             </div>
                             <div class="col-lg-3 ticket-content">
                                 <div style="text-align: center">
-                                    <img src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
-                                        style="object-fit: cover;" class="wd-100 ht-100 rounded-circle" alt="profile">
+                                    <img src="{{ url('backend/assets/images/no_image.jpg') }}" style="object-fit: cover;"
+                                        class="wd-100 ht-100 rounded-circle img-thumbnail" alt="profile"
+                                        id="ticket_avatar">
                                     <div class="mt-3 mb-3">
-                                        <label class="h4 fw-bolder text-capitalize">{{ $profileData->name }}</label>
-                                        <p class="text-muted">{{ $profileData->email }}</p>
+                                        <label id="ticket_name" class="h4 fw-bolder text-capitalize text-capitalize">Lorem
+                                            Ipsum</label>
+                                        <p id="ticket_email" class="text-muted">Lorem@gmail.com</p>
                                     </div>
                                 </div>
                                 <hr>
                                 <h6 class="mt-3 mb-3">Ticket Information</h6>
                                 <hr>
+                                <div class="mb-3" style="display: flex">
+                                    <label class="txt-11 fw-bolder text-capitalize">Ticket ID: </label>
+                                    <p id="ticket_id" style="margin-left: 0.5em;" class="text-muted">Null</p>
+                                </div>
+                                <div class="mb-3" style="display: flex">
+                                    <label class="txt-11 fw-bolder text-capitalize">Report Type: </label>
+                                    <p id="ticket_type" style="margin-left: 0.5em;" class="text-muted">Null</p>
+                                </div>
+                                <div class="mb-3" style="display: flex">
+                                    <label class="txt-11 fw-bolder text-capitalize">Order ID: </label>
+                                    <p id="ticket_order" style="margin-left: 0.5em;" class="text-muted">Null</p>
+                                </div>
                                 <div class="mb-3 align-items-center" style="display: flex">
-                                    <label class="txt-11 fw-bolder text-capitalize">Status: </label>
-                                    <p style="margin-left: 0.5em;" class="text-muted">Open</p>
-                                    <i class="link-arrow" data-feather="arrow-down-circle" style="width: 16; height:16; margin-left: 0.5em;"></i>
+                                    <label class="txt-11 fw-bolder me-2">Status: </label>
+                                    <div class="dropdown">
+                                        <button aria-labelledby="dropdownMenuButton"
+                                            class="btn btn-secondary btn-sm dropdown-toggle text-capitalize"
+                                            type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                                            aria-haspopup="true" aria-expanded="false">
+                                            Null
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            <a class="dropdown-item" onclick="changeStatus('open')"
+                                                href="#">Open</a>
+                                            <a class="dropdown-item" onclick="changeStatus('in progress')"
+                                                href="#">In Progress</a>
+                                            <a class="dropdown-item" onclick="changeStatus('closed')"
+                                                href="#">Closed</a>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-3" style="display: flex">
                                     <label class="txt-11 fw-bolder text-capitalize">Created: </label>
-                                    <p style="margin-left: 0.5em;" class="text-muted">June 12 2020</p>
+                                    <p id="ticket_created" style="margin-left: 0.5em;" class="text-muted">Null
+                                    </p>
                                 </div>
                                 <div class="mb-3" style="display: flex">
                                     <label class="txt-11 fw-bolder text-capitalize">Updated: </label>
-                                    <p style="margin-left: 0.5em;" class="text-muted">June 12 2020</p>
-                                </div>
-                                <div class="mb-3" style="display: flex">
-                                    <label class="txt-11 fw-bolder text-capitalize">Avg Response Time: </label>
-                                    <p style="margin-left: 0.5em;" class="text-muted">2 hours 20 mins</p>
-                                </div>
-                                <div class="mb-3" style="display: flex">
-                                    <label class="txt-11 fw-bolder text-capitalize">Ticket: </label>
-                                    <p style="margin-left: 0.5em;" class="text-muted">23</p>
+                                    <p id="ticket_updated" style="margin-left: 0.5em;" class="text-muted">Null
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -524,10 +344,58 @@
         </div>
     </div>
     <script>
-        // Get the chat body element
-        const chatBody = document.getElementById('chatBody');
+        function selectReport(element, item) {
+            var avatar = document.getElementById("ticket_avatar");
+            var id = document.getElementById("ticket_id");
+            var status = document.getElementById("ticket_status");
+            var created_at = document.getElementById("ticket_created");
+            var updated_at = document.getElementById("ticket_updated");
+            var order_id = document.getElementById("ticket_order");
+            var type = document.getElementById("ticket_type");
+            var name = document.getElementById("ticket_name");
+            var email = document.getElementById("ticket_email");
 
-        // Scroll to the bottom of the chat body
-        chatBody.scrollTop = chatBody.scrollHeight;
+            $('.list-group-item').removeClass('active');
+            $(element).addClass('active');
+            console.log(item);
+            if (item.picasset === null || item.picasset === undefined) {
+                avatar.src = "{{ url('backend/assets/images/no_image.jpg') }}";
+            } else {
+                avatar.src = item.picasset;
+            }
+            if (item.order_id === null || item.order_id === undefined) {
+                order_id.textContent = 'Null';
+            } else {
+                order_id.textContent = item.order_id;
+            }
+            id.textContent = item.report_id;
+            created_at.textContent = item.created_at;
+            updated_at.textContent = item.updated_at;
+            type.textContent = item.report_type;
+            name.textContent = item.name;
+            email.textContent = item.email;
+            $('#dropdownMenuButton').text(item.status);
+        }
+
+        function changeStatus(value) {
+            $('#dropdownMenuButton').text(value);
+
+            var ticketId = document.getElementById('ticket_id').textContent.trim();
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                type: 'PUT',
+                url: "{{ route('report.status', ['report_id' => ':ticketId', 'status' => ':status']) }}".replace(
+                    ':ticketId', encodeURIComponent(ticketId)).replace(':status', encodeURIComponent(value)),
+                success: function(response) {
+                    window.location.href = "{{ route('report') }}";
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
     </script>
 @endsection

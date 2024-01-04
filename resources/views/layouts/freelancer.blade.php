@@ -4,7 +4,8 @@
 
         <nav class="page-breadcrumb">
             <ol class="breadcrumb" style="display: flex; justify-content: flex-end;">
-                <a href="{{ route('freelancer.request') }}" class="btn btn-primary" role="button" style="margin-right: 20px; position: relative; ">
+                <a href="{{ route('freelancer.request') }}" class="btn btn-primary" role="button"
+                    style="margin-right: 20px; position: relative; ">
                     <i data-feather="file-text" style="padding-right: 5px;"></i>Freelancer Request
                     @if ($pendingFreelancerCount > 0)
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill badge-danger">
@@ -157,8 +158,8 @@
                                                 @else
                                                     <img id="showImage"
                                                         class="wd-80 ht-80 rounded-circle border border-dark me-3"
-                                                        src="{{ asset($item->picasset) }}"
-                                                        alt="profile" style="object-fit: cover; ">
+                                                        src="{{ asset($item->picasset) }}" alt="profile"
+                                                        style="object-fit: cover; ">
                                                 @endif
                                                 <span>{{ $item->name }}</span>
                                             </td>
@@ -196,7 +197,7 @@
                                                     <div class="modal-content">
                                                         <div class="modal-header">
                                                             <h5 class="modal-title" id="modalEditfreelancerTitle">Edit
-                                                                Freelancer</h5>
+                                                                Service</h5>
                                                             <button type="button" class="btn-close"
                                                                 data-bs-dismiss="modal" aria-label="btn-close"></button>
                                                         </div>

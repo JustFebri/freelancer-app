@@ -14,25 +14,29 @@ use App\Models\picture;
 use App\Models\skill;
 use App\Models\sub_category;
 use App\Models\sub_occupation;
-use App\Models\User;
+use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class FreelancerController extends Controller
 {
     public function freelancerActivation(Request $request)
     {
         $currentUserId = auth()->id();
-        $user = User::find($currentUserId);
+        $user = user::find($currentUserId);
 
-        $file1 = $request->file('profileImage');
-        $file2 = $request->file('idCardImage');
-        $file3 = $request->file('idCardWithSefieImage');
+        $file1 = $request->file('profileImage')->store('public/images');
+        $file2 = $request->file('idCardImage')->store('public/images');
+        $file3 = $request->file('idCardWithSefieImage')->store('public/images');
 
+        $filename = $request->file('profileImage')->hashName();
+        $path = 'public/images/' . $filename;
+        $url = asset(Storage::url($path));
+        
         $picData1 = [
-            'filename' => date('YmDHi') . $file1->getClientOriginalName(),
-            'filetype' => $file1->getMimeType(),
-            'file' => $file1->getContent(),
+            'piclink' => $url,
+            'picasset' => Storage::url($path),
         ];
 
         $pic1 = picture::create($picData1);
@@ -41,15 +45,20 @@ class FreelancerController extends Controller
         $user->picture_id = $pic1->picture_id;
         $user->save();
 
+        $filename = $request->file('idCardImage')->hashName();
+        $path = 'public/images/' . $filename;
+        $url = asset(Storage::url($path));
         $picData2 = [
-            'filename' => date('YmDHi') . $file2->getClientOriginalName(),
-            'filetype' => $file2->getMimeType(),
-            'file' => $file2->getContent(),
+            'piclink' => $url,
+            'picasset' => Storage::url($path),
         ];
+
+        $filename = $request->file('idCardWithSefieImage')->hashName();
+        $path = 'public/images/' . $filename;
+        $url = asset(Storage::url($path));
         $picData3 = [
-            'filename' => date('YmDHi') . $file3->getClientOriginalName(),
-            'filetype' => $file3->getMimeType(),
-            'file' => $file3->getContent(),
+            'piclink' => $url,
+            'picasset' => Storage::url($path),
         ];
 
         $pic2 = picture::create($picData2);

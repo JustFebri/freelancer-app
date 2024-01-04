@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('title');
             $table->text('description');
             $table->string('location');
-            $table->string('offline');
-            $table->string('status');
+            $table->string('type');
+            $table->string('status')->nullable();
             $table->timestamps();
         });
     }

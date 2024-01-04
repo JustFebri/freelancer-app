@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sub_occupation', function (Blueprint $table) {
-            $table->increments('suboccupation_id')->nullable();
+            $table->increments('suboccupation_id');
             $table->unsignedInteger('freelancer_id')->nullable();
             $table->unsignedInteger('subcategory_id')->nullable();
         });

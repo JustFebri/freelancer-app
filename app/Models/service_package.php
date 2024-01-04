@@ -10,4 +10,7 @@ class service_package extends Model
     use HasFactory;
     protected $table = 'service_package';
     protected $primaryKey = 'package_id';
+    protected $fillable = [
+        'service_id', 'title', 'description', 'price', 'revision', 'delivery_days'
+    ];
 }
