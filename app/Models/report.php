@@ -18,6 +18,6 @@ class report extends Model
         'report_type',
         'description',
         'status',
-        'status',
+        'subject',
     ];
 }

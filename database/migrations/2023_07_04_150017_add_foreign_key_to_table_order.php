@@ -21,6 +21,11 @@ return new class extends Migration
                 ->references('client_id')
                 ->on('client')
                 ->onDelete('cascade');
+
+            $table->foreign('custom_id')
+                ->references('custom_id')
+                ->on('custom_orders')
+                ->onDelete('cascade');
         });
     }
 
@@ -32,6 +37,7 @@ return new class extends Migration
         Schema::table('order', function (Blueprint $table) {
             $table->dropForeign(['package_id']);
             $table->dropForeign(['client_id']);
+            $table->dropForeign(['custom_id']);
         });
     }
 };

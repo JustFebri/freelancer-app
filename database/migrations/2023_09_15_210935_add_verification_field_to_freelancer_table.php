@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('freelancer', function (Blueprint $table) {
             $table->string('link')->nullable();
-            $table->unsignedInteger('id_card')->nullable();
-            $table->unsignedInteger('id_card_with_selfie')->nullable();
+            $table->unsignedBigInteger('id_card')->nullable();
+            $table->unsignedBigInteger('id_card_with_selfie')->nullable();
         });
     }
 

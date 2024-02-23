@@ -12,15 +12,14 @@ class ChatMessage extends Model
     protected $table = 'messages';
     protected $guarded = ['message_id'];
     protected $primaryKey = 'message_id';
-
     protected $touches = ['chat'];
 
-    public function user():BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(user::class, 'user_id');
     }
 
-    public function chat():BelongsTo
+    public function chat(): BelongsTo
     {
         return $this->belongsTo(Chat::class, 'chatRoom_id');
     }

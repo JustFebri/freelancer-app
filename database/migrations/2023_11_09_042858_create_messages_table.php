@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            $table->increments('message_id');
-            $table->unsignedInteger('chatRoom_id');
-            $table->unsignedInteger('user_id');
+            $table->id('message_id');
+            $table->unsignedBigInteger('chatRoom_id');
+            $table->unsignedBigInteger('user_id');
             $table->text('message')->nullable();
             $table->timestamps();
 

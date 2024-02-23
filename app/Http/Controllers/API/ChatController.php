@@ -11,7 +11,9 @@ use App\Http\Requests\API\StoreMessageRequest;
 use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\ChatParticipant;
+use App\Models\custom_orders;
 use App\Models\picture;
+use App\Models\service;
 use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +78,19 @@ class ChatController extends Controller
             ->latest('updated_at')
             ->get();
 
+       
+        foreach ($chat as $item) {
+            if($item->lastMessage->message == null){
+                $message = ChatMessage::find($item->lastMessage->message_id);
+
+                if($message->service_id == null){
+                    $item->lastMessage->message = "Here's your Custom Order";
+                }else{
+                    $item->lastMessage->message = "Custom Order Request";
+                }
+            }
+        }
+
         return response([
             'message' => 'Success',
             'chatList' => $chat,
@@ -89,20 +104,34 @@ class ChatController extends Controller
 
         $messages = ChatMessage::where('chatRoom_id', $chatId)
             ->with('user')
-            ->latest('created_at')
+            ->first('created_at')
             ->get();
 
+        foreach ($messages as $item) {
+            if ($item->service_id != null) {
+                $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
+                $service = service::find($item->service_id);
+                $item->title = $service->title;
+            } else if ($item->custom_id != null) {
+                $custom = custom_orders::find($item->custom_id);
+                $service = service::find($custom->service_id);
+                $item->title = $service->title;
+                $item->custom_data = $custom;
+            }
+        }
         return $this->success($messages);
     }
 
     public function sendMessage(StoreMessageRequest $request)
     {
+        Log::info($request);
         $data = $request->validated();
+
         $data['user_id'] = auth()->id();
 
         $messageData = ChatMessage::create($data);
         $messageData->load('user');
-        $this->sendNotificationToOther($messageData);
+        // $this->sendNotificationToOther($messageData);
 
         return response([
             'data' => 'message',

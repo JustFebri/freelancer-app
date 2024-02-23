@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -62,12 +63,57 @@ class ProfileController extends Controller
         $report = report::create([
             'user_id' => $currentUserId,
             'report_type' => 'App Report',
-            'description' => $request->issue
+            'description' => $request->issue,
+            'subject' => $request->subject,
         ]);
 
         return response([
             'message' => 'Your issue has been successfully sent to the admin for review. We appreciate your feedback and will address the matter as soon as possible',
             'report' => $report,
+        ], 200);
+    }
+
+    public function changeUserData(Request $request)
+    {
+        $currentUserId = auth()->id();
+        if ($currentUserId) {
+            $user = user::find($currentUserId);
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->save();
+
+            return response([
+                'message' => 'User Data Updated',
+                'userData' => $user,
+            ], 200);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        $currentUserId = auth()->id();
+        
+        $user = user::find($currentUserId);
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response([
+                'message' => 'Current password is incorrect',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response([
+            'message' => 'Password changed successfully',
+        ], 200);
+    }
+
+    public function ticketList(Request $request)
+    {
+        $currentUserId = auth()->id();
+        $data = report::where('user_id', $currentUserId)->get();
+        return response()->json([
+            'data' => $data,
         ], 200);
     }
 

@@ -53,12 +53,12 @@
                                                     @if ($loop->index == 0)
                                                         <div class="carousel-item active" data-bs-interval="3000">
                                                             <img src="{{ asset($item->picasset) }}"
-                                                                style="d-block object-fit: contain; width: 100%; height: 500px;">
+                                                                style="display: block; object-fit: contain; width: 100%; height: 500px;">
                                                         </div>
                                                     @else
                                                         <div class="carousel-item" data-bs-interval="3000">
                                                             <img src="{{ asset($item->picasset) }}"
-                                                                style="d-block object-fit: contain; width: 100%; height: 500px;">
+                                                                style="display: block; object-fit: contain; width: 100%; height: 500px;">
                                                         </div>
                                                     @endif
                                                 @endforeach
@@ -115,7 +115,7 @@
                                                     <tr>
                                                         <th scope="col">Name</th>
                                                         @foreach ($package as $key => $item)
-                                                            <th scope="col" style="white-space: pre-wrap;">
+                                                            <th scope="col" style="">
                                                                 {{ $item->title }}</th>
                                                         @endforeach
                                                     </tr>

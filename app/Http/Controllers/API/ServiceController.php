@@ -18,63 +18,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ServiceController extends Controller
 {
-    public function packageActivation(Request $request)
-    {
-        $currentUserId = auth()->id();
-        $record = freelancer::where('user_id', '=', $currentUserId)->first();
-
-        Log::info($request);
-        $result = sub_category::where('subcategory_name', $request->subCategory)->value('subcategory_id');
-
-        $service = service::create([
-            'freelancer_id' => $record->freelancer_id,
-            'subcategory_id' => $result,
-            'title' => $request->title,
-            'description' => $request->desc,
-            'location' => $request->location ?? '',
-            'type' => $request->type,
-            'custom_order' => $request->customOrder,
-            'IsApproved' => 'pending'
-        ]);
-
-        $dataStringPackage = $request->input('packages');
-        $dataArray = json_decode($dataStringPackage);
-        foreach ($dataArray as $data) {
-            $result = service_package::create([
-                'service_id' => $service->service_id,
-                'title' => $data->title,
-                'description' => $data->desc,
-                'price' => $data->price,
-                'revision' => $data->revision,
-                'delivery_days' => $data->deliveryDays,
-            ]);
-        }
-
-        $images = $request->file('images');
-        if ($images) {
-            foreach ($images as $image) {
-                $image->store('public/images');
-                $filename = $image->hashName();
-                $path = 'public/images/' . $filename;
-                $url = asset(Storage::url($path));
-
-                $newPicture = new picture;
-                $newPicture->piclink = $url;
-                $newPicture->picasset = Storage::url($path);
-                $newPicture->save();
-
-                $service_img = new service_img;
-                $service_img->service_id = $service->service_id;
-                $service_img->picture_id = $newPicture->picture_id;
-                $service_img->save();
-            }
-        }
-
-        return response([
-            'message' => 'Service request has been successfully created',
-        ], 201);
-    }
-
     public function getServiceFreelancer()
     {
         $currentUserId = auth()->id();
@@ -85,6 +28,10 @@ class ServiceController extends Controller
             ->leftJoin('category as c', 'c.category_id', '=', 'sc.category_id')
             ->where('s.freelancer_id', '=', $record->freelancer_id)
             ->get();
+
+        foreach ($data as $item) {
+            $item->servicePic = $this->getAImage($item->service_id);
+        }
 
         return response()->json([
             'data' => $data,
@@ -183,12 +130,16 @@ class ServiceController extends Controller
 
     public function getRecommendation()
     {
+        $authenticatedUserId = auth()->id();
+
         $service = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.custom_order')
+            ->where('u.user_id', '!=', $authenticatedUserId)
+            ->where('s.isApproved', '!=', 'pending')
             ->get();
 
         foreach ($service as $item) {
@@ -212,7 +163,7 @@ class ServiceController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description','u.email', 'sc.subcategory_name')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name')
             ->where('s.subcategory_id', '=', $subcategory_id)
             ->get();
 
@@ -236,8 +187,8 @@ class ServiceController extends Controller
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
-            ->leftJoin('sub_category as sc', 'sc.subcategory_id' ,'=','s.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description','u.email', 'sc.subcategory_name')
+            ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name')
             ->where('s.subcategory_id', '=', $subcategory_id)
             ->get();
 

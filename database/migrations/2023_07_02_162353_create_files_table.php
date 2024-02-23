@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('file', function (Blueprint $table) {
-            $table->increments('file_id');
-            $table->unsignedInteger('rev_id');
+            $table->id('file_id');
+            $table->unsignedBigInteger('rev_id');
             $table->string('filename');
             $table->binary('file');
             $table->timestamps();

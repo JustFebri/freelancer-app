@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id('id');
-            $table->string('checkout_link');
-            $table->string('external_id');
-            $table->string('status');
+            $table->string('order_id');
+            $table->string('token');
+            $table->string('payment_type')->nullable();
+            $table->string('payment_status');
             $table->timestamps();
         });
     }

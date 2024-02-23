@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('freelancer_skill', function (Blueprint $table) {
-            $table->increments('freelancerskill_id');
-            $table->unsignedInteger('freelancer_id');
-            $table->unsignedInteger('skill_id');
+            $table->id('freelancerskill_id');
+            $table->unsignedBigInteger('freelancer_id');
+            $table->unsignedBigInteger('skill_id');
         });
     }
 

@@ -92,21 +92,21 @@
                                                                                 </p>
                                                                             </div>
                                                                         </div>
-                                                                        @if($item->status == 'open')
-                                                                        <div
-                                                                            class="badge rounded-pill text-capitalize open mt-1">
-                                                                            {{ $item->status }}
-                                                                        </div>
+                                                                        @if ($item->status == 'open')
+                                                                            <div
+                                                                                class="badge rounded-pill text-capitalize open mt-1">
+                                                                                {{ $item->status }}
+                                                                            </div>
                                                                         @elseif($item->status == 'closed')
-                                                                        <div
-                                                                            class="badge rounded-pill text-capitalize closed mt-1">
-                                                                            {{ $item->status }}
-                                                                        </div>
+                                                                            <div
+                                                                                class="badge rounded-pill text-capitalize closed mt-1">
+                                                                                {{ $item->status }}
+                                                                            </div>
                                                                         @else
-                                                                        <div
-                                                                            class="badge rounded-pill text-capitalize in-progress mt-1">
-                                                                            {{ $item->status }}
-                                                                        </div>
+                                                                            <div
+                                                                                class="badge rounded-pill text-capitalize in-progress mt-1">
+                                                                                {{ $item->status }}
+                                                                            </div>
                                                                         @endif
                                                                     </div>
                                                                 </a>
@@ -132,25 +132,27 @@
                             <div class="col-lg-6 chat-content border-end-lg">
                                 <div class="chat-header border-bottom pb-2">
                                     <div class="d-flex justify-content-center">
-                                        <h5>Error message on login</h3>
+                                        <h5 id="title-report">Lorep Ipsum</h3>
                                     </div>
                                 </div>
                                 <div class="chat-body ps ps--active-y">
                                     <ul class="messages">
                                         <li class="message-item friend">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
+                                            <img style="object-fit: cover;" id="report-avatar"
+                                                src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
                                                 alt="avatar">
                                             <div class="content">
                                                 <div class="message">
                                                     <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
+                                                        <p id="ticket-desc">Lorem Ipsum is simply dummy text of the printing
+                                                            and typesetting
                                                             industry.</p>
                                                     </div>
                                                     <span>8:12 PM</span>
                                                 </div>
                                             </div>
                                         </li>
-                                        <li class="message-item me">
+                                        {{-- <li class="message-item me">
                                             <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
                                                 alt="avatar">
                                             <div class="content">
@@ -167,90 +169,7 @@
                                                     <span>8:13 PM</span>
                                                 </div>
                                             </div>
-                                        </li>
-                                        <li class="message-item friend">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry.</p>
-                                                    </div>
-                                                    <span>8:15 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="message-item me">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry printing and typesetting industry.</p>
-                                                    </div>
-                                                    <span>8:15 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="message-item friend">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry.</p>
-                                                    </div>
-                                                    <span>8:17 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="message-item me">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry printing and typesetting industry.</p>
-                                                    </div>
-                                                </div>
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum.</p>
-                                                    </div>
-                                                    <span>8:18 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="message-item friend">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry.</p>
-                                                    </div>
-                                                    <span>8:22 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="message-item me">
-                                            <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
-                                                alt="avatar">
-                                            <div class="content">
-                                                <div class="message">
-                                                    <div class="bubble">
-                                                        <p>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                                            industry printing and typesetting industry.</p>
-                                                    </div>
-                                                    <span>8:30 PM</span>
-                                                </div>
-                                            </div>
-                                        </li>
+                                        </li> --}}
                                     </ul>
                                     <div class="ps__rail-x" style="left: 0px; bottom: -85px;">
                                         <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
@@ -344,8 +263,13 @@
         </div>
     </div>
     <script>
+        function nl2br(str) {
+            return str.replace(/\n/g, '<br>');
+        }
+
         function selectReport(element, item) {
             var avatar = document.getElementById("ticket_avatar");
+            var reAvatar = document.getElementById("report-avatar");
             var id = document.getElementById("ticket_id");
             var status = document.getElementById("ticket_status");
             var created_at = document.getElementById("ticket_created");
@@ -354,6 +278,8 @@
             var type = document.getElementById("ticket_type");
             var name = document.getElementById("ticket_name");
             var email = document.getElementById("ticket_email");
+            var title = document.getElementById("title-report");
+            var desc = document.getElementById("ticket-desc");
 
             $('.list-group-item').removeClass('active');
             $(element).addClass('active');
@@ -362,6 +288,7 @@
                 avatar.src = "{{ url('backend/assets/images/no_image.jpg') }}";
             } else {
                 avatar.src = item.picasset;
+                reAvatar.src = item.picasset;
             }
             if (item.order_id === null || item.order_id === undefined) {
                 order_id.textContent = 'Null';
@@ -372,8 +299,12 @@
             created_at.textContent = item.created_at;
             updated_at.textContent = item.updated_at;
             type.textContent = item.report_type;
+            title.textContent = item.report_type;
             name.textContent = item.name;
             email.textContent = item.email;
+            // desc.textContent = item.description;
+            desc.innerHTML = nl2br(item.description);
+
             $('#dropdownMenuButton').text(item.status);
         }
 

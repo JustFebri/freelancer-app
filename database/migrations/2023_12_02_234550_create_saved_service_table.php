@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('saved_services', function (Blueprint $table) {
-            $table->increments('saved_id');
-            $table->unsignedInteger('service_id')->nullable();
-            $table->unsignedInteger('user_id')->nullable();
+            $table->id('saved_id');
+            $table->unsignedBigInteger('service_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')

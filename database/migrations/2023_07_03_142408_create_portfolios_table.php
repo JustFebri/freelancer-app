@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('portfolio', function (Blueprint $table) {
-            $table->increments('portfolio_id');
-            $table->unsignedInteger('freelancer_id');
+            $table->id('portfolio_id');
+            $table->unsignedBigInteger('freelancer_id');
             $table->string('title');
             $table->text('description');
             $table->timestamps();

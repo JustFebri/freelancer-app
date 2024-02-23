@@ -31,7 +31,8 @@ class user extends Authenticatable
         'status',
         'updated_at',
         'profile_type',
-        'last_login'
+        'last_login',
+        'balance',
     ];
 
     /**

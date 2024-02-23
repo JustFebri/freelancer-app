@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('client', function (Blueprint $table) {
-            $table->increments('client_id');
-            $table->unsignedInteger('user_id')->nullable();
+            $table->id('client_id');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedInteger('orders_made')->default(0);
             $table->decimal('total_spent', 10, 2);
         });

@@ -9,5 +9,11 @@ class portfolio extends Model
 {
     use HasFactory;
     protected $table = 'portfolio';
-    protected $primaryKey = 'porftfolio_id';
+    protected $primaryKey = 'portfolio_id';
+
+    protected $fillable = [
+        'freelancer_id',
+        'title',
+        'description',
+    ];
 }

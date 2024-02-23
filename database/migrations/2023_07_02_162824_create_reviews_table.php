@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('review', function (Blueprint $table) {
-            $table->increments('review_id');
-            $table->unsignedInteger('order_id');
-            $table->unsignedInteger('client_id');
-            $table->unsignedInteger('freelancer_id');
+            $table->id('review_id');
+            $table->string('order_id');
+            $table->unsignedBigInteger('client_id');
+            $table->unsignedBigInteger('freelancer_id');
             $table->decimal('rating', 10, 0);
             $table->text('comment');
             $table->timestamps();

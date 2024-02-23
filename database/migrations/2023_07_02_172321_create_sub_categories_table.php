@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sub_category', function (Blueprint $table) {
-            $table->increments('subcategory_id');
-            $table->unsignedInteger('category_id');
+            $table->id('subcategory_id');
+            $table->unsignedBigInteger('category_id');
             $table->string('subcategory_name');
         });
     }

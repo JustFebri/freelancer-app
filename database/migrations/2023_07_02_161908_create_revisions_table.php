@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('revision', function (Blueprint $table) {
-            $table->increments('rev_id');
-            $table->unsignedInteger('order_id');
+            $table->id('rev_id');
+            $table->string('order_id');
             $table->unsignedInteger('rev_number');
             $table->text('rev_details');
             $table->timestamps();

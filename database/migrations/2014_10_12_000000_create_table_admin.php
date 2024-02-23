@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admin', function (Blueprint $table) {
-            $table->increments('admin_id');
-            $table->unsignedInteger('picture_id')->nullable();
+            $table->id('admin_id');
+            $table->unsignedBigInteger('picture_id')->nullable();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();

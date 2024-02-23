@@ -10,5 +10,10 @@ class portfolio_img extends Model
     use HasFactory;
     protected $table = 'portfolio_img';
     protected $primaryKey = 'portfolioImg_id';
-    protected $timestamps = false;
+    public $timestamps = false;
+
+    protected $fillable = [
+        'portfolio_id',
+        'picture_id',
+    ];
 }

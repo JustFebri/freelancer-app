@@ -12,13 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('report', function (Blueprint $table) {
-            $table->unsignedInteger('order_id')->nullable()->change();
-
-            $table->unsignedInteger('user_id')->after('report_id');
+            $table->string('order_id')->nullable()->change();
+            $table->unsignedBigInteger('user_id')->after('report_id')->nullable();
             $table->foreign('user_id')
                 ->references('user_id')
-                ->on('user')
-                ->onDelete('cascade');
+                ->on('user');
             $table->string('report_type')->after('order_id');
             $table->string('status')->default('open')->after('description');
         });

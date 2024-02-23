@@ -15,6 +15,7 @@ class freelancer extends Authenticatable
     public $timestamps = false;
 
     protected $fillable = [
+        'freelancer_id',
         'user_id',
         'identity_number',
         'identity_name',
