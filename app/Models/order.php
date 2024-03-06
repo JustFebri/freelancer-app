@@ -10,7 +10,9 @@ class order extends Model
     use HasFactory;
     protected $table = 'order';
     protected $primaryKey = 'order_id';
-
+    protected $casts = [
+        'order_id' => 'string',
+    ];
     protected $fillable = [
         'order_id',
         'package_id',

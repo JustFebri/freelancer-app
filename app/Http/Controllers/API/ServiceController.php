@@ -86,20 +86,17 @@ class ServiceController extends Controller
     public function getRating($service_id)
     {
         $count = DB::table('review as r')
-            ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-            ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
-            ->where('sp.service_id', '=', $service_id)
+            ->where('service_id', '=', $service_id)
             ->count();
 
         $rating = DB::table('review as r')
-            ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-            ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
-            ->where('sp.service_id', '=', $service_id)
+            ->where('service_id', '=', $service_id)
             ->avg('r.rating');
+
 
         return [
             'count' => $count,
-            'rating' => $rating,
+            'rating' => round((float)$rating, 1),
         ];
     }
 
@@ -146,7 +143,8 @@ class ServiceController extends Controller
             $item->lowestPrice = $this->getLowestPrice($item->service_id);
             $var = $this->getRating($item->service_id);
             $item->count = $var['count'];
-            $item->rating = $var['rating'];
+            $item->rating = number_format($var['rating'], 1);
+
             $item->servicePic = $this->getAImage($item->service_id);
             $item->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($item->service_id);
         }
@@ -158,6 +156,7 @@ class ServiceController extends Controller
 
     public function getDisplayBySubCategoryIdAuth($subcategory_id)
     {
+        $authenticatedUserId = auth()->id();
         $service = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
@@ -165,13 +164,14 @@ class ServiceController extends Controller
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name')
             ->where('s.subcategory_id', '=', $subcategory_id)
+            ->where('u.user_id', '!=', $authenticatedUserId)
             ->get();
 
         foreach ($service as $item) {
             $item->lowestPrice = $this->getLowestPrice($item->service_id);
             $var = $this->getRating($item->service_id);
             $item->count = $var['count'];
-            $item->rating = $var['rating'];
+            $item->rating = number_format($var['rating'], 1);
             $item->servicePic = $this->getAImage($item->service_id);
             $item->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($item->service_id);
         }
@@ -183,6 +183,7 @@ class ServiceController extends Controller
 
     public function getDisplayBySubCategoryIdNoAuth($subcategory_id)
     {
+        $authenticatedUserId = auth()->id();
         $service = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
@@ -190,13 +191,14 @@ class ServiceController extends Controller
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name')
             ->where('s.subcategory_id', '=', $subcategory_id)
+            ->where('u.user_id', '!=', $authenticatedUserId)
             ->get();
 
         foreach ($service as $item) {
             $item->lowestPrice = $this->getLowestPrice($item->service_id);
             $var = $this->getRating($item->service_id);
             $item->count = $var['count'];
-            $item->rating = $var['rating'];
+            $item->rating = number_format($var['rating'], 1);
             $item->servicePic = $this->getAImage($item->service_id);
             $item->serviceFav = false;
         }

@@ -23,7 +23,6 @@ class freelancer extends Authenticatable
         'identity_address',
         'description',
         'rating',
-        'total_sales',
         'revenue',
         'link',
         'id_card',

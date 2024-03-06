@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/changeProfilePicture', [ProfileController::class, 'changeProfilePicture']);
     Route::post('/changeUserData', [ProfileController::class, 'changeUserData']);
     Route::post('/changePassword', [ProfileController::class, 'changePassword']);
+    Route::get('/download-file/{orderId}', [ClientController::class, 'downloadFile']);
 
     Route::get('/getServiceFreelancer', [ServiceController::class, 'getServiceFreelancer']);
     Route::get('/getRecommendation', [ServiceController::class, 'getRecommendation']);
@@ -63,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/freelancer/addPortfolio', [FreelancerController::class, 'addPortfolio']);
     Route::post('/freelancer/updateSellerProfile', [FreelancerController::class, 'updateSellerProfile']);
     Route::post('/freelancer/updatePortfolio', [FreelancerController::class, 'updatePortfolio']);
+    Route::post('/freelancer/orderConfirmation', [FreelancerController::class, 'orderConfirmation']);
+    Route::post('/freelancer/deliver', [FreelancerController::class, 'deliverNow']);
 
     Route::post('/chat/create', [ChatController::class, 'createChat']);
     Route::post('/chat/sendMessage', [ChatController::class, 'sendMessage']);
@@ -70,12 +73,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat/getAllMessage', [ChatController::class, 'getAllMessage']);
 
     Route::get('/getProfileImage', [ChatController::class, 'getProfileImage']);
+    Route::get('/getBalance', [ProfileController::class, 'getBalance']);
 
     Route::apiResource('savedService', SavedServiceController::class);
     route::get('/getDisplayBySubCategoryIdAuth/{subcategory_id}', [ServiceController::class, 'getDisplayBySubCategoryIdAuth']);
     Route::get('/getAllOrders/{status}', [ClientController::class, 'getAllOrders']);
+    Route::post('completeOrder/{order_id}',[ClientController::class, 'completeOrder']);
+    Route::post('sendReview/',[ClientController::class, 'sendReview']);
 
     Route::post('/midtrans/payment', [MidtransController::class, 'create']);
+    Route::post('/balance/payment', [MidtransController::class, 'paymethodBalance']);
     Route::post('/midtrans/payment/custom_order', [MidtransController::class, 'createCustom']);
     Route::post('midtrans/payment/cancel/{order_id}',[MidtransController::class, 'cancel']);
     Route::post('midtrans/payment/refund/{order_id}',[MidtransController::class, 'refund']);
@@ -90,7 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getServices',[FreelancerController::class, 'getServices']);
     Route::get('/getPortfolio',[FreelancerController::class, 'getPortfolio']);
     Route::get('/getPortfolio/{portfolio_id}',[FreelancerController::class, 'getPortfolioById']);
-    Route::get('/freelancer/getAllOrder',[FreelancerController::class, 'getAllOrder']);
+    Route::get('/freelancer/getAllOrder/{status}',[FreelancerController::class, 'getAllOrder']);
     Route::delete('/deletePortfolio/{portfolio_id}',[FreelancerController::class, 'deletePortfolio']);
 });
 
@@ -98,6 +105,7 @@ Route::get('/getPopularService', [ServiceController::class, 'getPopularService']
 Route::get('/getAllCategory', [ServiceController::class, 'getAllCategory']);
 Route::get('/getAllSubCategory/{category_id}', [ServiceController::class, 'getAllSubCategory']);
 route::get('/getDisplayBySubCategoryIdNoAuth/{subcategory_id}', [ServiceController::class, 'getDisplayBySubCategoryIdNoAuth']);
+Route::get('/getReview/{service_id}', [ClientController::class, 'getReview']);
 
 Route::get('/getLowestPrice/{service_id}', [ServiceController::class, 'getLowestPrice']);
 Route::get('/getRating/{service_id}', [ServiceController::class, 'getRating']);

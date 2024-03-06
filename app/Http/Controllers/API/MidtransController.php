@@ -2,12 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\PushToOrder;
+use App\Events\UpdateCustom;
+use App\Events\UpdateMessage;
+use App\Events\UpdateOrder;
+use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
+use App\Models\ChatMessage;
 use App\Models\client;
+use App\Models\custom_orders;
 use App\Models\freelancer;
 use App\Models\order;
 use App\Models\payment;
 use App\Models\service;
+use App\Models\service_package;
 use App\Models\transactions;
 use App\Models\user;
 use Carbon\Carbon;
@@ -47,6 +55,8 @@ class MidtransController extends Controller
         $order->amount = $request->price;
         $order->order_status = 'token';
         $order->due_date = Carbon::now()->addHours(24);
+        $packageData = service_package::find($request->package_id);
+        $order->revision = $packageData->revision;
         $order->save();
 
 
@@ -72,6 +82,7 @@ class MidtransController extends Controller
         );
 
         $snapToken = \Midtrans\Snap::getSnapToken($params);
+        Log::info($snapToken);
 
         $payment = new payment;
         $payment->order_id = $oderId;
@@ -107,6 +118,9 @@ class MidtransController extends Controller
         $order->amount = $request->price;
         $order->order_status = 'token';
         $order->due_date = Carbon::now()->addHours(24);
+
+        $customData = custom_orders::find($request->custom_id);
+        $order->revision = $customData->revision;
         $order->save();
 
         Log::info($order);
@@ -162,12 +176,14 @@ class MidtransController extends Controller
         $serverKey = 'SB-Mid-server-ozqQ40fCNDbY9RqlElgxFL1V';
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
 
+
+
+
         if ($hashed == $request->signature_key) {
-            // Log::info($request->transaction_status);
+            $order = order::find($request->order_id);
             switch ($request->transaction_status) {
                 case 'capture':
                     Log::info('payment is capture');
-                    $order = order::find($request->order_id);
                     $order->order_status = 'pending';
                     $order->due_date = Carbon::now()->addHours(24);
                     $order->save();
@@ -180,7 +196,6 @@ class MidtransController extends Controller
 
                 case 'settlement':
                     Log::info('payment is settled');
-                    $order = order::find($request->order_id);
                     $order->order_status = 'pending';
                     $order->due_date = Carbon::now()->addHours(24);
                     $order->save();
@@ -196,14 +211,13 @@ class MidtransController extends Controller
                     $transaction->order_id = $request->order_id;
                     $transaction->user_id = $client->user_id;
                     $transaction->amount = $payment->amount;
-                    $transaction->type = 'payment';
+                    $transaction->type = 'client_payment';
                     $transaction->description = 'payment for order ' . $order->order_id;
                     $transaction->save();
                     break;
 
                 case 'pending':
                     Log::info('payment is pending');
-                    $order = order::find($request->order_id);
                     $order->order_status = 'awaiting payment';
                     $order->save();
 
@@ -211,11 +225,19 @@ class MidtransController extends Controller
                     $payment->payment_type = $request->payment_type;
                     $payment->payment_status = 'pending';
                     $payment->save();
+
+                    if ($order->custom_id != null) {
+                        $custom_order = custom_orders::find($order->custom_id);
+                        $custom_order->status = 'accepted';
+                        $custom_order->save();
+
+                        $message = ChatMessage::where('custom_id', $order->custom_id)->first();
+                        broadcast(new UpdateCustom($message->chatRoom_id))->toOthers();
+                    }
                     break;
 
                 case 'deny':
                     Log::info('payment is deny');
-                    $order = order::find($request->order_id);
                     $order->order_status = 'failure';
                     $order->save();
 
@@ -227,20 +249,15 @@ class MidtransController extends Controller
 
                 case 'cancel':
                     Log::info('payment is cancel');
-                    $order = order::find($request->order_id);
-                    $order->order_status = 'cancelled';
-                    $order->save();
-
-                    $payment = payment::where('order_id', '=', $request->order_id)->first();
-                    $payment->payment_type = $request->payment_type;
-                    $payment->payment_status = 'cancel';
-                    $payment->save();
+                    if ($order) {
+                        $order->delete();
+                        broadcast(new UpdateOrder($order->client_id))->toOthers();
+                    }
                     break;
 
                 case 'expire':
                     Log::info('payment is cancel');
-                    $order = order::find($request->order_id);
-                    $order->order_status = 'failure';
+                    $order->order_status = 'cancelled';
                     $order->save();
 
                     $payment = payment::where('order_id', '=', $request->order_id)->first();
@@ -251,7 +268,6 @@ class MidtransController extends Controller
 
                 case 'refund':
                     Log::info('payment is refund');
-                    $order = order::find($request->order_id);
                     $order->order_status = 'cancelled';
                     $order->save();
 
@@ -264,8 +280,11 @@ class MidtransController extends Controller
                 default:
                     Log::info('Case not covered');
             }
-            // $order = order::find($request->order_id);
-            // $order->update(['order_status' => $request->transaction_status]);
+
+            broadcast(new UpdateOrder($order->client_id))->toOthers();
+
+            $freelancer = freelancer::find($order->freelancer_id);
+            broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
         }
     }
 
@@ -285,7 +304,6 @@ class MidtransController extends Controller
 
     public function refund(string $order_id)
     {
-        $authenticatedUserId = auth()->id();
         $order = order::find($order_id);
         $order->order_status = 'cancelled';
         $order->save();
@@ -294,16 +312,79 @@ class MidtransController extends Controller
         $payment->payment_status = 'refunded';
         $payment->save();
 
-        $user = user::find($authenticatedUserId);
-        $user->balance = $order->amount;
+        $user = user::find($order->client_id);
+        $user->balance += $order->amount;
         $user->save();
 
         $transaction = new transactions();
         $transaction->order_id = $order_id;
-        $transaction->user_id = $authenticatedUserId;
-        $transaction->amount = -($order->amount);
-        $transaction->type = 'refund';
+        $transaction->user_id = $order->client_id;
+        $transaction->amount = - ($order->amount);
+        $transaction->type = 'client_refund';
         $transaction->description = 'refund for order ' . $order_id;
         $transaction->save();
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+    }
+
+
+    public function paymethodBalance(Request $request)
+    {
+        Log::info('payment is settled using balance');
+        $oderId = (string) Str::uuid();
+        $authenticatedUserId = auth()->id();
+
+        $order = new order;
+        $order->order_id = $oderId;
+        if ($request->type == 'custom') {
+            $order->custom_id = $request->itemId;
+
+            $custom = custom_orders::find($request->itemId);
+            $custom->status = 'accepted';
+            $custom->save();
+
+            $message = ChatMessage::where('custom_id', $custom->custom_id)->first();
+            broadcast(new UpdateCustom($message->chatRoom_id))->toOthers();
+        } else {
+            $order->package_id = $request->itemId;
+        }
+        $order->client_id = $authenticatedUserId;
+        $order->freelancer_id = $request->freelancer_id;
+        $order->amount = $request->price;
+        $order->order_status = 'pending';
+        $order->due_date = Carbon::now()->addHours(24);
+        $order->save();
+
+        $payment = new payment;
+        $payment->order_id = $oderId;
+        $payment->client_id = $authenticatedUserId;
+        $payment->payment_type = 'balance';
+        $payment->amount = $request->price;
+        $payment->payment_status = 'settlement';
+        $payment->save();
+
+        $transaction = new transactions();
+        $transaction->order_id = $oderId;
+        $transaction->user_id = $authenticatedUserId;
+        $transaction->amount = $request->price;
+        $transaction->type = 'client_payment';
+        $transaction->description = 'payment for order ' . $oderId;
+        $transaction->save();
+
+        $user = user::find($authenticatedUserId);
+        $user->balance = $user->balance - $request->price;
+        $user->save();
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        return response([
+            'message' => 'Payment Successful',
+        ], 200);
     }
 }

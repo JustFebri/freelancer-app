@@ -24,7 +24,7 @@ class FreelancerController extends Controller
         $db_freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.total_sales', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where(function ($query) {
                 $query->where('f.IsApproved', '=', 'approved')
                     ->orWhereNull('f.IsApproved');
@@ -44,7 +44,7 @@ class FreelancerController extends Controller
         $db_freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.total_sales', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where('f.IsApproved', '=', 'pending')
             ->latest()
             ->get();
@@ -104,7 +104,6 @@ class FreelancerController extends Controller
                 'description' => $description,
                 'rating' => 0,
                 'revenue' => 0,
-                'total_sales' => 0,
             ]);
 
             $notification = array(
@@ -144,7 +143,6 @@ class FreelancerController extends Controller
                 'description' => $description,
                 'rating' => 0,
                 'revenue' => 0,
-                'total_sales' => 0,
             ]);
 
             $notification = array(
@@ -318,7 +316,7 @@ class FreelancerController extends Controller
         $freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.rating', 'f.total_sales', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset',  'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset',  'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where('f.freelancer_id', $freelancer_id)
             ->first();
 
@@ -342,7 +340,6 @@ class FreelancerController extends Controller
                 'f.identity_address',
                 'f.description',
                 'f.rating',
-                'f.total_sales',
                 'f.revenue',
                 'f.link',
                 'u.user_id',

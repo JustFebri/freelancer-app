@@ -2,8 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\UpdateCustom;
+use App\Events\UpdateMessage;
+use App\Events\UpdateOrder;
+use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\StoreMessageRequest;
+use App\Mail\FreelancerDeliveredWork;
+use App\Mail\FreelancerDeliveredWorkWithoutAttachment;
 use App\Models\category;
 use App\Models\custom_orders;
 use App\Models\freelancer;
@@ -13,6 +19,7 @@ use App\Models\language;
 use App\Models\LanguageClass;
 use App\Models\occupation;
 use App\Models\order;
+use App\Models\payment;
 use App\Models\picture;
 use App\Models\portfolio;
 use App\Models\portfolio_img;
@@ -23,11 +30,15 @@ use App\Models\service_package;
 use App\Models\skill;
 use App\Models\sub_category;
 use App\Models\sub_occupation;
+use App\Models\transactions;
 use App\Models\user;
+use App\Models\delivery;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class FreelancerController extends Controller
 {
@@ -86,7 +97,6 @@ class FreelancerController extends Controller
             'description' => $request->description,
             'rating' => 0,
             'revenue' => 0,
-            'total_sales' => 0,
             'link' => $request->url,
             'id_card' => $pic2->picture_id,
             'id_card_with_selfie' => $pic3->picture_id,
@@ -347,7 +357,6 @@ class FreelancerController extends Controller
             'expiration_date' => $request->expiration_date,
         ]);
 
-
         return response()->json([
             'data' => $data,
         ], 200);
@@ -366,6 +375,9 @@ class FreelancerController extends Controller
 
         $customOrder->status = $request->status;
         $customOrder->save();
+
+        Log::info($request->chatRoom_id);
+        broadcast(new UpdateCustom($request->chatRoom_id))->toOthers();
 
         return response()->json([
             'data' => $customOrder,
@@ -423,7 +435,7 @@ class FreelancerController extends Controller
 
         return response([
             'user' => $user,
-            'avg' => $averageReview,
+            'avg' => round((float)$averageReview, 1),
             'count' => $reviewCount,
         ], 200);
     }
@@ -461,17 +473,15 @@ class FreelancerController extends Controller
 
         foreach ($services as $item) {
             $item->avg = DB::table('review as r')
-                ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
                 ->where('r.freelancer_id', '=', $freelancer->freelancer_id)
-                ->where('sp.service_id', '=', $item->service_id)
+                ->where('r.service_id', '=', $item->service_id)
                 ->avg('r.rating');
 
+            $item->avg = round((float)$item->avg, 1);
+
             $item->count = DB::table('review as r')
-                ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
                 ->where('r.freelancer_id', '=', $freelancer->freelancer_id)
-                ->where('sp.service_id', '=', $item->service_id)
+                ->where('r.service_id', '=', $item->service_id)
                 ->count();
 
             $item->lowestPrice = app('App\Http\Controllers\API\ServiceController')->getLowestPrice($item->service_id);
@@ -634,34 +644,177 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function getAllOrder()
+    public function getAllOrder(string $status)
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
 
-        $package = DB::table('order as o')
-            ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
-            ->leftJoin('service as s', 's.service_id', '=', 'sp.service_id')
-            ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
-            ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
-            ->where('s.freelancer_id', $freelancer->freelancer_id)
-            ->whereNotNull('o.package_id')
-            ->get();
+        if ($status == 'all') {
+            $package = DB::table('order as o')
+                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
+                ->leftJoin('service as s', 's.service_id', '=', 'sp.service_id')
+                ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
+                ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
+                ->where('s.freelancer_id', $freelancer->freelancer_id)
+                ->where('o.order_status', '!=', 'token')
+                ->where('o.order_status', '!=', 'awaiting payment')
+                ->whereNotNull('o.package_id')
+                ->orderByDesc('o.updated_at')
+                ->get();
 
-        $custom_orders = DB::table('order as o')
-            ->leftJoin('custom_orders as co', 'co.custom_id', '=', 'o.custom_id')
-            ->leftJoin('service as s', 's.service_id', '=', 'co.service_id')
-            ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
-            ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
-            ->where('co.freelancer_id', $freelancer->freelancer_id)
-            ->whereNotNull('o.custom_id')
-            ->get();
+            $custom_orders = DB::table('order as o')
+                ->leftJoin('custom_orders as co', 'co.custom_id', '=', 'o.custom_id')
+                ->leftJoin('service as s', 's.service_id', '=', 'co.service_id')
+                ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
+                ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
+                ->where('co.freelancer_id', $freelancer->freelancer_id)
+                ->where('o.order_status', '!=', 'token')
+                ->where('o.order_status', '!=', 'awaiting payment')
+                ->whereNotNull('o.custom_id')
+                ->orderByDesc('o.updated_at')
+                ->get();
+        } else {
+            $package = DB::table('order as o')
+                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
+                ->leftJoin('service as s', 's.service_id', '=', 'sp.service_id')
+                ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
+                ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
+                ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
+                ->where('s.freelancer_id', $freelancer->freelancer_id)
+                ->where('o.order_status', $status)
+                ->where('o.order_status', '!=', 'token')
+                ->where('o.order_status', '!=', 'awaiting payment')
+                ->whereNotNull('o.package_id')
+                ->orderByDesc('o.updated_at')
+                ->get();
 
-        Log::info($custom_orders);
+            $custom_orders = DB::table('order as o')
+                ->leftJoin('custom_orders as co', 'co.custom_id', '=', 'o.custom_id')
+                ->leftJoin('service as s', 's.service_id', '=', 'co.service_id')
+                ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
+                ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
+                ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
+                ->where('co.freelancer_id', $freelancer->freelancer_id)
+                ->where('o.order_status', $status)
+                ->where('o.order_status', '!=', 'token')
+                ->where('o.order_status', '!=', 'awaiting payment')
+                ->whereNotNull('o.custom_id')
+                ->orderByDesc('o.updated_at')
+                ->get();
+        }
+
+        foreach ($package as $item) {
+            $data1 = service_package::find($item->package_id);
+            $data2 = service::find($data1->service_id);
+
+            $item->service_name = $data2->title;
+            $item->type_name = $data1->title;
+        }
+
+        foreach ($custom_orders as $item) {
+            $data1 = custom_orders::find($item->custom_id);
+            $data2 = service::find($data1->service_id);
+
+            $item->service_name = $data2->title;
+            $item->type_name = 'Custom Order';
+        }
 
         return response([
             'package' => $package,
             'custom' => $custom_orders,
+        ], 200);
+    }
+
+    function orderConfirmation(Request $request)
+    {
+        $order = order::find($request->order_id);
+
+        if ($request->status == 'accept') {
+            $order->order_status = 'in progress';
+            if ($order->package_id != null) {
+                $package = service_package::find($order->package_id);
+                $order->due_date = Carbon::now()->addDays($package->delivery_days);
+            } else {
+                $custom = custom_orders::find($order->custom_id);
+                $order->due_date = Carbon::now()->addDays($custom->delivery_days);
+            }
+            $order->save();
+        } else {
+            $order->order_status = 'cancelled';
+            $order->save();
+
+            $payment = payment::where('order_id', '=', $request->order_id)->first();
+            $payment->payment_status = 'refunded';
+            $payment->save();
+
+            $user = user::find($order->client_id);
+            $user->balance +=  $order->amount;
+            $user->save();
+
+            $transaction = new transactions();
+            $transaction->order_id = $request->order_id;
+            $transaction->user_id = $order->client_id;
+            $transaction->amount = - ($order->amount);
+            $transaction->type = 'client_refund';
+            $transaction->description = 'refund for order ' . $request->order_id;
+            $transaction->save();
+        }
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        return response([
+            'message' => 'Order Updated',
+        ], 200);
+    }
+
+    public function deliverNow(Request $request)
+    {
+        $order = order::find($request->order_id);
+        $order->order_status = 'delivered';
+        $order->due_date = Carbon::now()->addDays(3);
+        $order->save();
+
+        $delivery = new delivery;
+        $delivery->order_id = $request->order_id;
+
+        if ($request->file('fileUrl') != null) {
+            $file = $request->file('fileUrl')->store('public/files');
+            $filename = $request->file('fileUrl')->hashName();
+            $path = 'public/files/' . $filename;
+            $url = asset(Storage::url($path));
+            $delivery->fileUrl = $url;
+        }
+
+        $delivery->description = $request->desc;
+        $delivery->save();
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        $freelancer = user::find($freelancer->user_id);
+        $client = user::find($order->client_id);
+        
+        if ($request->file('fileUrl') != null) {
+            Mail::to($client->email)->send(new FreelancerDeliveredWork(
+                $freelancer->name,
+                $request->desc,
+                $client->name,
+                storage_path('app/' . $path),
+            ));
+        }else{
+            Mail::to($client->email)->send(new FreelancerDeliveredWorkWithoutAttachment(
+                $freelancer->name,
+                $request->desc,
+                $client->name,
+            ));
+        }
+
+        return response([
+            'message' => 'Order Delivered',
         ], 200);
     }
 }

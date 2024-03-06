@@ -11,11 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('revision', function (Blueprint $table) {
+        Schema::create('revision', function (Blueprint $table) {
+            $table->id('revision_id');
+            $table->string('order_id');
             $table->foreign('order_id')
                 ->references('order_id')
                 ->on('order')
                 ->onDelete('cascade');
+
+            $table->string('fileUrl')->nullable();
+            $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -24,8 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('revision', function (Blueprint $table) {
-            $table->dropForeign(['order_id']);
-        });
+        Schema::dropIfExists('revision');
     }
 };

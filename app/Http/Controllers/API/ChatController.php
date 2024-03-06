@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\NewLastMessage;
 use App\Events\NewMessageSent;
+use App\Events\UpdateLastMessage;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\GetMessageRequest;
 use App\Http\Requests\API\GetProfileImages;
@@ -78,14 +80,14 @@ class ChatController extends Controller
             ->latest('updated_at')
             ->get();
 
-       
+
         foreach ($chat as $item) {
-            if($item->lastMessage->message == null){
+            if ($item->lastMessage->message == null) {
                 $message = ChatMessage::find($item->lastMessage->message_id);
 
-                if($message->service_id == null){
+                if ($message->service_id == null) {
                     $item->lastMessage->message = "Here's your Custom Order";
-                }else{
+                } else {
                     $item->lastMessage->message = "Custom Order Request";
                 }
             }
@@ -131,7 +133,7 @@ class ChatController extends Controller
 
         $messageData = ChatMessage::create($data);
         $messageData->load('user');
-        // $this->sendNotificationToOther($messageData);
+        $this->sendNotificationToOther($messageData);
 
         return response([
             'data' => 'message',
@@ -141,31 +143,37 @@ class ChatController extends Controller
 
     private function sendNotificationToOther(ChatMessage $messageData)
     {
-
+        $userId = auth()->id();
         // TODO move this event broadcast to observer
         broadcast(new NewMessageSent($messageData))->toOthers();
 
-        $user = auth()->user();
-        $userId = $user->user_id;
-
-        $chat = Chat::where('chatRoom_id', $messageData->chatRoom_id)
-            ->with(['participants' => function ($query) use ($userId) {
-                $query->where('user_id', '!=', $userId);
-            }])
+        $sendTo = ChatParticipant::where('chatRoom_id', '=', $messageData->chatRoom_id)
+            ->where('user_id', '!=', $userId)
             ->first();
-        Log::info($chat);
-        if (count($chat->participants) > 0) {
-            $otherUserId = $chat->participants[0]->user_id;
 
-            $otherUser = user::where('user_id', $otherUserId)->first();
-            $otherUser->sendNewMessageNotification([
-                'messageData' => [
-                    'senderName' => $user->username,
-                    'message' => $messageData->message,
-                    'chatId' => $messageData->chatRoom_id
-                ]
-            ]);
-        }
+        broadcast(new UpdateLastMessage($sendTo->user_id))->toOthers();
+
+        // $user = auth()->user();
+        // $userId = $user->user_id;
+
+        // $chat = Chat::where('chatRoom_id', $messageData->chatRoom_id)
+        //     ->with(['participants' => function ($query) use ($userId) {
+        //         $query->where('user_id', '!=', $userId);
+        //     }])
+        //     ->first();
+        // Log::info($chat);
+        // if (count($chat->participants) > 0) {
+        //     $otherUserId = $chat->participants[0]->user_id;
+
+        //     $otherUser = user::where('user_id', $otherUserId)->first();
+        //     $otherUser->sendNewMessageNotification([
+        //         'messageData' => [
+        //             'senderName' => $user->username,
+        //             'message' => $messageData->message,
+        //             'chatId' => $messageData->chatRoom_id
+        //         ]
+        //     ]);
+        // }
     }
 
     public function getProfileImage(GetProfileImages $profileImage)

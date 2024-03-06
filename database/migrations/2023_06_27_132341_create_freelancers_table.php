@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('identity_number')->unique();
             $table->text('description');
             $table->float('rating');
-            $table->unsignedInteger('total_sales');
             $table->decimal('revenue', 10, 2);
         });
     }

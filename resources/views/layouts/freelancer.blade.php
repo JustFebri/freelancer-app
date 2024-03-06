@@ -173,7 +173,6 @@
                                             </td>
                                             <td>{{ $item->identity_number }}</td>
                                             <td>{{ $item->rating }}</td>
-                                            <td>{{ $item->total_sales }}</td>
                                             <td>{{ $item->revenue }}</td>
                                             <td>{{ $item->created_at }}</td>
                                             <td>{{ $item->updated_at }}</td>

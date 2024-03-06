@@ -11,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('revision', function (Blueprint $table) {
-            $table->id('rev_id');
+        Schema::create('delivery', function (Blueprint $table) {
+            $table->id('delivery_id');
             $table->string('order_id');
-            $table->unsignedInteger('rev_number');
-            $table->text('rev_details');
+            $table->foreign('order_id')
+                ->references('order_id')
+                ->on('order')
+                ->onDelete('cascade');
+
+            $table->string('fileUrl')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('revision');
+        Schema::dropIfExists('delivery');
     }
 };

@@ -11,14 +11,14 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NewMessageSent implements ShouldBroadcast
+class UpdateOrder implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(private ChatMessage $chatMessage)
+    public function __construct(private string $user_id)
     {
         //
     }
@@ -31,14 +31,13 @@ class NewMessageSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            // new PrivateChannel('chat.' . $this->chatMessage->chatRoom_id),
-            new Channel('chat.' . $this->chatMessage->chatRoom_id),
+            new Channel('update.' . $this->user_id),
         ];
     }
 
     public function broadcastAs(): String
     {
-        return 'message.sent';
+        return 'order.update';
     }
 
     /**
@@ -49,8 +48,7 @@ class NewMessageSent implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'chatRoom_id' => $this->chatMessage->chatRoom_id,
-            'message' => $this->chatMessage->toArray(),
+            'message' => 'Update Order',
         ];
     }
 }

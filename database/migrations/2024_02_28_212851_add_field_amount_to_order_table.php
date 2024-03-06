@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('file', function (Blueprint $table) {
-            $table->foreign('rev_id')
-                ->references('rev_id')
-                ->on('revision')
-                ->onDelete('cascade');
+        Schema::table('order', function (Blueprint $table) {
+            $table->integer('revision')->default(0);
         });
     }
 
@@ -24,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('file', function (Blueprint $table) {
-            $table->dropForeign(['rev_id']);
+        Schema::table('order', function (Blueprint $table) {
+            $table->dropColumn('revision');
         });
     }
 };

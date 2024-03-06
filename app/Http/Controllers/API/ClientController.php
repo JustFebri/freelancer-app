@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\UpdateOrder;
+use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
+use App\Mail\ClientAcceptDelivery;
+use App\Models\delivery;
 use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\review;
+use App\Models\revision;
 use App\Models\service;
 use App\Models\service_img;
 use App\Models\service_package;
@@ -15,40 +20,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\SavedServiceController;
+use App\Models\client;
 use App\Models\custom_orders;
+use App\Models\order;
+use App\Models\payment;
+use App\Models\transactions;
 use App\Models\user;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class ClientController extends Controller
 {
-    // public function getAllOrders(Request $request)
-    // {
-    //     $authenticatedUserId = auth()->id();
-    //     $orders = DB::table('order as o')
-    //         ->leftJoin('payments as ps', 'ps.order_id', '=', 'o.order_id')
-    //         ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
-    //         ->leftJoin('service as s', 's.service_id', '=', 'sp.service_id')
-    //         ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
-
-    //         ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
-    //         ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
-
-    //         ->where('o.client_id', '=', $authenticatedUserId)
-    //         ->where('o.order_status', '!=', 'token')
-    //         ->select('s.service_id', 'sp.title as package_title', 's.title as service_title', 'sp.price', 'o.created_at', 'o.updated_at', 'o.order_status', 'p.picasset', 'u.name')
-    //         ->get();
-
-    //     foreach ($orders as $item) {
-    //         $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
-    //     }
-
-    //     Log::info($orders);
-
-    //     return response()->json([
-    //         'data' => $orders,
-    //     ], 200);
-    // }
-
     public function getAllOrders(string $status)
     {
         $authenticatedUserId = auth()->id();
@@ -59,16 +41,25 @@ class ClientController extends Controller
                 ->where('o.order_status', '!=', 'token')
                 ->orderByDesc('o.updated_at')
                 ->get();
-        }else{
+        } else {
             $orders = DB::table('order as o')
-            ->where('o.client_id', '=', $authenticatedUserId)
-            ->where('o.order_status', $status)
-            ->orderByDesc('o.updated_at')
-            ->get();
+                ->where('o.client_id', '=', $authenticatedUserId)
+                ->where('o.order_status', $status)
+                ->orderByDesc('o.updated_at')
+                ->get();
         }
 
 
         foreach ($orders as $item) {
+            $dataTemp = payment::where('order_id', $item->order_id)->first();
+            $item->token = $dataTemp->token;
+            $count = delivery::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count() + revision::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count();
+            if ($count == 0) {
+                $item->fileCount = 0;
+            } else {
+                $item->fileCount = 1;
+            }
+
             if ($item->package_id != null) {
                 $package = service_package::find($item->package_id);
                 $service = service::find($package->service_id);
@@ -81,6 +72,7 @@ class ClientController extends Controller
                 $item->type_name = $package->title;
                 $item->price = $package->price;
                 $item->name = $user->name;
+                $item->freelancerId = $user->user_id;
                 $item->picasset = $picture->picasset;
                 $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
             } else {
@@ -95,8 +87,16 @@ class ClientController extends Controller
                 $item->type_name = 'Custom Order';
                 $item->price = $custom->price;
                 $item->name = $user->name;
+                $item->freelancerId = $user->user_id;
                 $item->picasset = $picture->picasset;
                 $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
+            }
+            $existingReview = Review::where('client_id', $authenticatedUserId)
+                ->where('service_id', $item->service_id)
+                ->first();
+
+            if ($existingReview) {
+                $item->reviewStatus = 'available';
             }
         }
 
@@ -115,6 +115,7 @@ class ClientController extends Controller
             ->first();
 
         $data->avg = review::where('freelancer_id', $freelancer_id)->avg('rating');
+        $data->avg = round((float)$data->avg, 1);
         $data->count = review::where('freelancer_id', $freelancer_id)->count();
 
         $freelancerLanguage = DB::table('freelancer_language as fl')
@@ -131,19 +132,26 @@ class ClientController extends Controller
             ->where('s.freelancer_id', '=', $freelancer_id)
             ->get();
 
+        $reviews = DB::table('review as r')
+            ->leftJoin('user as u', 'u.user_id', '=', 'r.client_id')
+            ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
+            ->orderBy('updated_at', 'desc')
+            ->select('p.piclink', 'u.name', 'r.rating', 'r.comment', 'r.updated_at')
+            ->get();
+
         foreach ($services as $item) {
+
             $item->avg = DB::table('review as r')
-                ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
                 ->where('r.freelancer_id', '=', $freelancer_id)
-                ->where('sp.service_id', '=', $item->service_id)
+                ->where('r.service_id', '=', $item->service_id)
                 ->avg('r.rating');
 
+            $item->avg = round((float)$item->avg, 1);
+
+
             $item->count = DB::table('review as r')
-                ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
-                ->leftJoin('service_package as sp', 'sp.package_id', '=', 'o.package_id')
                 ->where('r.freelancer_id', '=', $freelancer_id)
-                ->where('sp.service_id', '=', $item->service_id)
+                ->where('r.service_id', '=', $item->service_id)
                 ->count();
 
             $item->lowestPrice = app('App\Http\Controllers\API\ServiceController')->getLowestPrice($item->service_id);
@@ -161,13 +169,144 @@ class ClientController extends Controller
                 ->where('pi.portfolio_id', '=', $item->portfolio_id)
                 ->get();
         }
-
+        Log::info($reviews);
         return response()->json([
             'data' => $data,
             'languages' => $freelancerLanguage,
             'skills' => $freelancerSkills,
             'services' => $services,
             'portfolio' => $portfolio,
+            'reviews' => $reviews,
+        ], 200);
+    }
+
+    public function downloadFile(string $orderId)
+    {
+        $order = order::find($orderId);
+        if ($order->revision == 0) {
+            $item = delivery::where('order_id', $orderId)->first();
+        } else {
+            $item = revision::where('order_id', $orderId)->first();
+        }
+
+        $path = parse_url($item->fileUrl, PHP_URL_PATH);
+        $path = str_replace('/storage', 'public', $path);
+
+        if (Storage::exists($path)) {
+            return response()->json([
+                'message' => 'Founded',
+                'fileUrl' => $item->fileUrl,
+                'fileExtension' => $this->getFileExtension($path),
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Not Founded',
+            ], 404);
+        }
+    }
+    public function getFileExtension($filePath)
+    {
+        $pathInfo = pathinfo($filePath);
+        $fileExtension = $pathInfo['extension'] ?? '';
+
+        return $fileExtension;
+    }
+
+    public function completeOrder(string $order_id)
+    {
+        $authenticatedUserId = auth()->id();
+
+        $order = order::find($order_id);
+        $order->order_status = 'completed';
+        $order->save();
+
+        $client = client::find($authenticatedUserId);
+        $client->orders_made += 1;
+        $client->total_spent += $order->amount;
+        $client->save();
+
+        $freelancer = freelancer::find($order->freelancer_id);
+        $freelancer->revenue += $order->amount;
+        $freelancer->save();
+
+        $userFreelancer = user::find($freelancer->user_id);
+        $userFreelancer->balance += $order->amount;
+        $userFreelancer->save();
+
+        $transaction = new transactions;
+        $transaction->order_id = $order_id;
+        $transaction->user_id = $freelancer->user_id;
+        $transaction->amount = - ($order->amount);
+        $transaction->type = 'freelancer_payout';
+        $transaction->description = 'payout for finished order ' . $order_id;
+        $transaction->save();
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        Mail::to($userFreelancer->email)->send(new ClientAcceptDelivery(
+            $userFreelancer->name,
+        ));
+
+        return response()->json([
+            'message' => 'Order Completed',
+        ], 200);
+    }
+
+    public function revision(string $order_id)
+    {
+    }
+
+    public function sendReview(Request $request)
+    {
+        $authenticatedUserId = auth()->id();
+
+        $order = order::find($request->order_id);
+
+        if ($order) {
+            $result = review::where('client_id', $authenticatedUserId)
+                ->where('service_id', $request->service_id)
+                ->first();
+
+            if ($result) {
+                $result->rating = $request->rating;
+                $result->comment = $request->comment;
+                $result->save();
+            } else {
+                $review = new review;
+                $review->client_id = $authenticatedUserId;
+                $review->freelancer_id = $request->freelancer_id;
+                $review->rating = $request->rating;
+                $review->comment = $request->comment;
+                $review->service_id = $request->service_id;
+                $review->save();
+            }
+        }
+        if ($request->broadcast == 'yes') {
+            broadcast(new UpdateOrder($order->client_id))->toOthers();
+            $freelancer = freelancer::find($order->freelancer_id);
+            broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+        }
+
+
+        return response()->json([
+            'message' => 'Review Sent',
+        ], 200);
+    }
+
+    public function getReview(string $service_id)
+    {
+        $reviews = DB::table('review as r')
+            ->leftJoin('user as u', 'u.user_id', '=', 'r.client_id')
+            ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
+            ->where('service_id', $service_id)
+            ->orderBy('updated_at', 'desc')
+            ->select('p.piclink', 'u.name', 'r.rating', 'r.comment', 'r.updated_at')
+            ->get();
+
+        return response()->json([
+            'message' => 'Success fetch review data',
+            'data' => $reviews,
         ], 200);
     }
 }

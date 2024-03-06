@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class revision extends Model
+class delivery extends Model
 {
     use HasFactory;
-    protected $table = 'revision';
-    protected $primaryKey = 'revision_id';
+    protected $table = 'delivery';
+    protected $primaryKey = 'delivery_id';
     protected $fillable = [
         'order_id',
         'fileUrl',

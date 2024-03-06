@@ -10,6 +10,7 @@ use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\user;
 use App\Models\report;
+use App\Models\transactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -92,7 +93,7 @@ class ProfileController extends Controller
     public function changePassword(Request $request)
     {
         $currentUserId = auth()->id();
-        
+
         $user = user::find($currentUserId);
         if (!Hash::check($request->current_password, $user->password)) {
             return response([
@@ -167,5 +168,15 @@ class ProfileController extends Controller
                 'picture' =>  $newPicture->picasset,
             ], 200);
         }
+    }
+
+    public function getBalance()
+    {
+        $currentUserId = auth()->id();
+        $user = user::find($currentUserId);
+
+        return response()->json([
+            'balance' => abs($user->balance),
+        ], 200);
     }
 }
