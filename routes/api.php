@@ -41,6 +41,9 @@ Route::get('/test', function () {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot', [AuthController::class, 'forgot']);
+Route::post('/check', [AuthController::class, 'checkCode']);
+Route::post('/reset', [AuthController::class, 'reset']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -48,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getUserType', [ProfileController::class, 'getUserType']);
     Route::post('/sendIssue', [ProfileController::class, 'sendIssue']);
     Route::get('/listTicket', [ProfileController::class, 'ticketList']);
+    Route::post('/getTicketMessage', [ProfileController::class, 'getTicketMessage']);
+    Route::post('/sendTicketMessage', [ProfileController::class, 'sendTicketMessage']);
 
     Route::post('/changeProfilePicture', [ProfileController::class, 'changeProfilePicture']);
     Route::post('/changeUserData', [ProfileController::class, 'changeUserData']);
@@ -58,14 +63,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getRecommendation', [ServiceController::class, 'getRecommendation']);
 
     Route::post('/freelancerActivation', [FreelancerController::class, 'freelancerActivation']);
-    Route::get('/freelancer/getDropdownItem', [FreelancerController::class, 'getDropdownItem']);
+    Route::get('/freelancer/getDropdownItem/{type}', [FreelancerController::class, 'getDropdownItem']);
     Route::post('/freelancer/createCustomOrder', [FreelancerController::class, 'createCustomOrder']);
     Route::post('/freelancer/setCustomOrderStatus', [FreelancerController::class, 'setCustomOrderStatus']);
     Route::post('/freelancer/addPortfolio', [FreelancerController::class, 'addPortfolio']);
     Route::post('/freelancer/updateSellerProfile', [FreelancerController::class, 'updateSellerProfile']);
     Route::post('/freelancer/updatePortfolio', [FreelancerController::class, 'updatePortfolio']);
     Route::post('/freelancer/orderConfirmation', [FreelancerController::class, 'orderConfirmation']);
+    Route::post('/freelancer/requestConfirmation', [FreelancerController::class, 'requestConfirmation']);
     Route::post('/freelancer/deliver', [FreelancerController::class, 'deliverNow']);
+    Route::get('/freelancer/getReviews', [FreelancerController::class, 'getReviews']);
 
     Route::post('/chat/create', [ChatController::class, 'createChat']);
     Route::post('/chat/sendMessage', [ChatController::class, 'sendMessage']);
@@ -74,31 +81,37 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/getProfileImage', [ChatController::class, 'getProfileImage']);
     Route::get('/getBalance', [ProfileController::class, 'getBalance']);
+    Route::get('/getTransaction', [ProfileController::class, 'getTransaction']);
+    Route::post('/withdrawBalance', [ProfileController::class, 'withdrawBalance']);
 
     Route::apiResource('savedService', SavedServiceController::class);
     route::get('/getDisplayBySubCategoryIdAuth/{subcategory_id}', [ServiceController::class, 'getDisplayBySubCategoryIdAuth']);
     Route::get('/getAllOrders/{status}', [ClientController::class, 'getAllOrders']);
-    Route::post('completeOrder/{order_id}',[ClientController::class, 'completeOrder']);
-    Route::post('sendReview/',[ClientController::class, 'sendReview']);
+    Route::post('completeOrder/{order_id}', [ClientController::class, 'completeOrder']);
+    Route::post('sendReview/', [ClientController::class, 'sendReview']);
+    Route::post('requestRevision/', [ClientController::class, 'requestRevision']);
 
     Route::post('/midtrans/payment', [MidtransController::class, 'create']);
     Route::post('/balance/payment', [MidtransController::class, 'paymethodBalance']);
     Route::post('/midtrans/payment/custom_order', [MidtransController::class, 'createCustom']);
-    Route::post('midtrans/payment/cancel/{order_id}',[MidtransController::class, 'cancel']);
-    Route::post('midtrans/payment/refund/{order_id}',[MidtransController::class, 'refund']);
+    Route::post('midtrans/payment/cancel/{order_id}', [MidtransController::class, 'cancel']);
+    Route::post('midtrans/payment/refund/{order_id}', [MidtransController::class, 'refund']);
 
     Route::post('/packageActivation', [FreelancerController::class, 'packageActivation']);
     Route::post('/updateService', [FreelancerController::class, 'updateService']);
-    Route::get('/getServiceData/{serviceId}',[FreelancerController::class, 'getServiceData']);
-    Route::delete('/deleteSellerService/{serviceId}',[FreelancerController::class, 'deleteSellerService']);
+    Route::get('/getServiceData/{serviceId}', [FreelancerController::class, 'getServiceData']);
+    Route::delete('/deleteSellerService/{serviceId}', [FreelancerController::class, 'deleteSellerService']);
 
-    Route::get('/getHeader',[FreelancerController::class, 'getHeader']);
-    Route::get('/getAbout',[FreelancerController::class, 'getAbout']);
-    Route::get('/getServices',[FreelancerController::class, 'getServices']);
-    Route::get('/getPortfolio',[FreelancerController::class, 'getPortfolio']);
-    Route::get('/getPortfolio/{portfolio_id}',[FreelancerController::class, 'getPortfolioById']);
-    Route::get('/freelancer/getAllOrder/{status}',[FreelancerController::class, 'getAllOrder']);
-    Route::delete('/deletePortfolio/{portfolio_id}',[FreelancerController::class, 'deletePortfolio']);
+    Route::get('/getHeader', [FreelancerController::class, 'getHeader']);
+    Route::get('/getAbout', [FreelancerController::class, 'getAbout']);
+    Route::get('/getServices', [FreelancerController::class, 'getServices']);
+    Route::get('/getPortfolio', [FreelancerController::class, 'getPortfolio']);
+    
+    Route::get('/freelancer/getAllOrder/{status}', [FreelancerController::class, 'getAllOrder']);
+    Route::delete('/deletePortfolio/{portfolio_id}', [FreelancerController::class, 'deletePortfolio']);
+    Route::get('/getResult/{keyword}', [ServiceController::class, 'getResult']);
+    Route::post('/getResult/filterData', [ServiceController::class, 'filterData']);
+    Route::post('/getResult/filterSubCategory', [ServiceController::class, 'filterSubCategory']);
 });
 
 Route::get('/getPopularService', [ServiceController::class, 'getPopularService']);
@@ -113,5 +126,11 @@ Route::get('/getAImage/{service_id}', [ServiceController::class, 'getAImage']);
 Route::get('/getServiceImage/{service_id}', [ServiceController::class, 'getServiceImage']);
 Route::get('/getServicePackage/{service_id}', [ServiceController::class, 'getServicePackage']);
 Route::get('/fetchDataSeller/{freelancer_id}', [ClientController::class, 'fetchDataSeller']);
+Route::get('/getResultNotLogged/{keyword}', [ServiceController::class, 'getResultNotLogged']);
+Route::post('/getResult/filterDataNotLogged', [ServiceController::class, 'filterDataNotLogged']);
+Route::post('/getResult/filterSubCategoryNotLogged', [ServiceController::class, 'filterSubCategoryNotLogged']);
+Route::get('/getPortfolio/{portfolio_id}', [FreelancerController::class, 'getPortfolioById']);
 
 Route::post('/midtrans/payment/webhook', [MidtransController::class, 'webhook']);
+Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
+Route::post('/payout/webhook/xendit', [PaymentController::class, 'webhook']);

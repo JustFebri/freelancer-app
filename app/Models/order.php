@@ -22,5 +22,9 @@ class order extends Model
         'due_date',
         'freelancer_id',
         'amount',
+        'onsite_date',
+        'address',
+        'lat',
+        'lng',
     ];
 }

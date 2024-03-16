@@ -19,8 +19,9 @@ return new class extends Migration
                 ->on('order')
                 ->onDelete('cascade');
 
-            $table->string('fileUrl')->nullable();
-            $table->text('description')->nullable();
+            $table->text('notes');
+            $table->text('response')->nullable();
+            $table->string('status');
             $table->timestamps();
         });
     }

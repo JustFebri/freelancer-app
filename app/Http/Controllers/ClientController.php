@@ -18,7 +18,7 @@ class ClientController extends Controller
         $db_client = DB::table('client as c')
             ->leftJoin('user as u', 'c.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('c.client_id', 'u.user_id', 'c.total_spent', 'c.orders_made', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('c.client_id', 'u.user_id', 'c.total_spent', 'c.orders_made', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->latest()
             ->get();
 
@@ -28,7 +28,6 @@ class ClientController extends Controller
     public function clientStore(request $request)
     {
         $currentTimestamp = Carbon::now();
-        $location = $request->location ?? '';
 
         $request->validate([
             'name' => 'required|string|max:200',
@@ -52,7 +51,6 @@ class ClientController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'location' => $location,
                 'picture_id' => $newPicture->picture_id,
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
@@ -83,7 +81,6 @@ class ClientController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'location' => $location,
                 'picture_id' => null,
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
@@ -148,7 +145,6 @@ class ClientController extends Controller
         $id = $request->id;
         $profileData = user::find($id);
         $currentTimestamp = Carbon::now();
-        $location = $request->location ?? '';
 
         if ($profileData->email == $request->email) {
             $request->validate([
@@ -185,7 +181,6 @@ class ClientController extends Controller
                 $profileData->update([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'location' => $location,
                     'updated_at' => $currentTimestamp,
                     'status' => $request->status
                 ]);
@@ -211,7 +206,6 @@ class ClientController extends Controller
                 $profileData->update([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'location' => $location,
                     'updated_at' => $currentTimestamp,
                     'picture_id' => $id,
                     'status' => $request->status
@@ -227,7 +221,6 @@ class ClientController extends Controller
             user::findOrFail($id)->update([
                 'name' => $request->name,
                 'email' => $request->email,
-                'location' => $location,
                 'updated_at' => $currentTimestamp,
                 'status' => $request->status
             ]);

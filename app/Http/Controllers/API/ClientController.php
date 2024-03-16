@@ -6,6 +6,7 @@ use App\Events\UpdateOrder;
 use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
 use App\Mail\ClientAcceptDelivery;
+use App\Mail\ClientRequestRevision;
 use App\Models\delivery;
 use App\Models\freelancer;
 use App\Models\picture;
@@ -20,10 +21,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\SavedServiceController;
+use App\Mail\FreelancerAcceptRevisionRequest;
+use App\Mail\FreelancerDeclineRevisionRequest;
 use App\Models\client;
 use App\Models\custom_orders;
 use App\Models\order;
 use App\Models\payment;
+use App\Models\report;
 use App\Models\transactions;
 use App\Models\user;
 use Illuminate\Support\Facades\Auth;
@@ -52,8 +56,13 @@ class ClientController extends Controller
 
         foreach ($orders as $item) {
             $dataTemp = payment::where('order_id', $item->order_id)->first();
+            $item->reportCount = report::where('order_id', $item->order_id)
+                ->where('user_id', $authenticatedUserId)
+                ->count();
+
             $item->token = $dataTemp->token;
-            $count = delivery::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count() + revision::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count();
+
+            $count = delivery::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count();
             if ($count == 0) {
                 $item->fileCount = 0;
             } else {
@@ -183,11 +192,9 @@ class ClientController extends Controller
     public function downloadFile(string $orderId)
     {
         $order = order::find($orderId);
-        if ($order->revision == 0) {
-            $item = delivery::where('order_id', $orderId)->first();
-        } else {
-            $item = revision::where('order_id', $orderId)->first();
-        }
+
+        $item = delivery::where('order_id', $orderId)->first();
+
 
         $path = parse_url($item->fileUrl, PHP_URL_PATH);
         $path = str_replace('/storage', 'public', $path);
@@ -253,10 +260,6 @@ class ClientController extends Controller
         ], 200);
     }
 
-    public function revision(string $order_id)
-    {
-    }
-
     public function sendReview(Request $request)
     {
         $authenticatedUserId = auth()->id();
@@ -307,6 +310,40 @@ class ClientController extends Controller
         return response()->json([
             'message' => 'Success fetch review data',
             'data' => $reviews,
+        ], 200);
+    }
+
+    public function requestRevision(Request $request)
+    {
+        $revision = new revision;
+        $revision->order_id = $request->order_id;
+        $revision->notes = $request->notes;
+        $revision->status = 'pending';
+        $revision->save();
+
+        $order = order::find($request->order_id);
+        $order->order_status = 'revision requested';
+        $order->save();
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        $userFreelancer = user::find($freelancer->user_id);
+        $userClient = user::find($order->client_id);
+
+        Mail::to($userFreelancer->email)->send(
+            new ClientRequestRevision(
+                $userFreelancer->name,
+                $userClient->name,
+                $request->notes,
+                $request->order_id,
+            ),
+        );
+
+        return response()->json([
+            'message' => 'Revision Request Sent',
+            'data' => $revision,
         ], 200);
     }
 }

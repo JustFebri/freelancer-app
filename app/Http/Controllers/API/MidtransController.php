@@ -57,6 +57,13 @@ class MidtransController extends Controller
         $order->due_date = Carbon::now()->addHours(24);
         $packageData = service_package::find($request->package_id);
         $order->revision = $packageData->revision;
+        Log::info($request->onsite_date);
+        if ($request->onsite_date != null) {
+            $order->onsite_date =  Carbon::parse($request->onsite_date);
+            $order->address = $request->loc;
+            $order->lat = $request->lat;
+            $order->lng = $request->lng;
+        }
         $order->save();
 
 
@@ -121,6 +128,13 @@ class MidtransController extends Controller
 
         $customData = custom_orders::find($request->custom_id);
         $order->revision = $customData->revision;
+        if ($customData->onsite_date != null) {
+            $order->onsite_date = Carbon::parse($customData->onsite_date);
+            $order->address = $customData->address;
+            $order->lat = $customData->lat;
+            $order->lng = $customData->lng;
+        }
+
         $order->save();
 
         Log::info($order);
@@ -346,16 +360,36 @@ class MidtransController extends Controller
             $custom->status = 'accepted';
             $custom->save();
 
+            if ($custom->onsite_date != null) {
+                $order->onsite_date =  Carbon::parse($custom->onsite_date);
+                $order->address = $custom->address;
+                $order->lat = $custom->lat;
+                $order->lng = $custom->lng;
+            }
+
             $message = ChatMessage::where('custom_id', $custom->custom_id)->first();
             broadcast(new UpdateCustom($message->chatRoom_id))->toOthers();
+
+
+            $order->revision = $custom->revision;
         } else {
             $order->package_id = $request->itemId;
+
+            $packageData = service_package::find($request->itemId);
+            $order->revision = $packageData->revision;
+            if ($request->onsite_date != null) {
+                $order->onsite_date =  Carbon::parse($request->onsite_date);
+                $order->address = $request->loc;
+                $order->lat = $request->lat;
+                $order->lng = $request->lng;
+            }
         }
         $order->client_id = $authenticatedUserId;
         $order->freelancer_id = $request->freelancer_id;
         $order->amount = $request->price;
         $order->order_status = 'pending';
         $order->due_date = Carbon::now()->addHours(24);
+
         $order->save();
 
         $payment = new payment;

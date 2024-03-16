@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\report;
+use App\Models\report_chats;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -19,7 +21,27 @@ class ReportController extends Controller
             ->latest()
             ->get();
 
+        foreach ($type as $item) {
+            $item->message = report_chats::where('report_id', $item->report_id)->get();
+        }
+
         return view('layouts.report', compact('type'));
+    }
+
+    public function sendMessage(Request $request)
+    {
+        Log::info('send');
+        $user_id = Auth::id();
+
+        $data = new report_chats;
+        $data->admin_id = $user_id;
+        $data->message = $request->message;
+        $data->report_id = $request->report_id;
+        $data->save();
+
+        $updatedChat = report_chats::where('report_id', $request->report_id)->latest('created_at')->first();;
+
+        return response()->json(['Success' => 'Message Sent', 'updatedReport' => $updatedChat], 200);
     }
 
     public function changeReportStatus(Request $request)
@@ -41,7 +63,7 @@ class ReportController extends Controller
                 'message' => 'Report not found',
                 'alert-type' => 'error'
             );
-           return response()->json(['error' => 'Report not found'], 404);
+            return response()->json(['error' => 'Report not found'], 404);
         }
     }
 }

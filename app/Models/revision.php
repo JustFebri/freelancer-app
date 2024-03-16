@@ -12,8 +12,9 @@ class revision extends Model
     protected $primaryKey = 'revision_id';
     protected $fillable = [
         'order_id',
-        'fileUrl',
-        'description',
+        'notes',
+        'status',
+        'response',
         'created_at',
         'updated_at',
     ];

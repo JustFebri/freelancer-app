@@ -64,11 +64,6 @@
                                             @enderror
                                         </div>
                                         <div class="mb-3">
-                                            <label for="InputLocation" class="form-label">Location</label>
-                                            <input type="text" class="form-control" id="InputLocation" autocomplete="off"
-                                                placeholder="Location" name="location">
-                                        </div>
-                                        <div class="mb-3">
                                             <label for="Inputidentity_number" class="form-label">Identity Number</label>
                                             <input type="numeric" class="form-control" id="Inputidentity_number"
                                                 autocomplete="off" placeholder="Identity Number/NIK" name="identity_number"
@@ -130,7 +125,6 @@
                                         <th>ID</th>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Location</th>
                                         <th>NIK</th>
                                         <th>Rating</th>
                                         <th>Total Sales</th>
@@ -164,13 +158,6 @@
                                                 <span>{{ $item->name }}</span>
                                             </td>
                                             <td>{{ $item->email }}</td>
-                                            <td>
-                                                @if ($item->location == null)
-                                                    Null
-                                                @else
-                                                    {{ $item->location }}
-                                                @endif
-                                            </td>
                                             <td>{{ $item->identity_number }}</td>
                                             <td>{{ $item->rating }}</td>
                                             <td>{{ $item->revenue }}</td>
@@ -232,14 +219,6 @@
                                                                     @error('email')
                                                                         <span class="text-danger">{{ $message }}</span>
                                                                     @enderror
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="InputLocation{{ $item->freelancer_id }}"
-                                                                        class="form-label">Location</label>
-                                                                    <input type="text" class="form-control"
-                                                                        id="InputLocation{{ $item->freelancer_id }}"
-                                                                        autocomplete="off" placeholder="Location"
-                                                                        name="location" value="{{ $item->location }}">
                                                                 </div>
                                                                 <div class="mb-3">
                                                                     <label

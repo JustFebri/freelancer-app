@@ -17,24 +17,23 @@ class SavedServiceController extends Controller
     {
         $currentUserId = auth()->id();
         $savedService = DB::table('saved_services as ss')
-            ->where('ss.user_id', '=', $currentUserId)
             ->leftJoin('service as s', 's.service_id', '=', 'ss.service_id')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
+            ->where('ss.user_id', '=', $currentUserId)
+            ->select('s.service_id','s.title','f.user_id','u.name','sc.subcategory_name','s.custom_order','s.type','s.location','p.picasset','s.description','u.email')
             ->get();
 
-        foreach ($savedService as $item){
+        foreach ($savedService as $item) {
             $item->lowestPrice = app('App\Http\Controllers\API\ServiceController')->getLowestPrice($item->service_id);
             $var = app('App\Http\Controllers\API\ServiceController')->getRating($item->service_id);
             $item->count = $var['count'];
-            $item->rating = $var['rating'];
+            $item->rating = number_format($var['rating'], 1);
             $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
             $item->serviceFav = $this->show($item->service_id);
         }
-
-        Log::info($savedService);
 
         return response([
             'data' => $savedService,

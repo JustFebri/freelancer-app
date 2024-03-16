@@ -23,7 +23,7 @@ class ServiceController extends Controller
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->leftJoin('category as c', 'c.category_id', '=', 'sc.category_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
-            ->select('s.service_id', 's.title', 'u.name', 's.type', 'c.category_name', 'sc.subcategory_name', 's.status', 's.created_at', 's.updated_at', 'f.freelancer_id')
+            ->select('s.service_id', 's.title', 'u.name', 's.type', 'c.category_name', 'sc.subcategory_name', 's.status', 's.created_at', 's.updated_at', 'f.freelancer_id', 's.location')
             ->where(function ($query) {
                 $query->where('s.IsApproved', '=', 'approved')
                     ->orWhereNull('s.IsApproved'); // Include records where IsApproved is NULL

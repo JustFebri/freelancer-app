@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(ReportController::class)->group(function () {
         Route::get('/report', 'report')->name('report');
         Route::put('/report/{report_id}/{status}','changeReportStatus')->name('report.status');
+        Route::post('/report{report_id}/{message}', 'sendMessage')->name('report.sent');
     });
 });
 

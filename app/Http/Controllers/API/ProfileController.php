@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\updateListTicket;
+use App\Events\updateTicketChat;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\ChangeTypeController;
 use App\Http\Requests\API\IssueRequest;
@@ -10,6 +12,7 @@ use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\user;
 use App\Models\report;
+use App\Models\report_chats;
 use App\Models\transactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -61,16 +64,72 @@ class ProfileController extends Controller
 
         $request->validated();
         $currentUserId = auth()->id();
-        $report = report::create([
+
+        $reportData = [
             'user_id' => $currentUserId,
-            'report_type' => 'App Report',
             'description' => $request->issue,
             'subject' => $request->subject,
-        ]);
+            'admin_id' => 1,
+        ];
+
+        if ($request->order_id != null) {
+            $reportData['order_id'] = $request->order_id;
+            $reportData['report_type'] = 'Order Report';
+        } else {
+            $reportData['report_type'] = 'App Report';
+        }
+
+        $report = report::create($reportData);
 
         return response([
             'message' => 'Your issue has been successfully sent to the admin for review. We appreciate your feedback and will address the matter as soon as possible',
             'report' => $report,
+        ], 200);
+    }
+
+    public function ticketList()
+    {
+        $currentUserId = auth()->id();
+        $data = report::where('user_id', $currentUserId)->get();
+        foreach ($data as $item) {
+            $item->lastMessage = report_chats::where('user_id', $currentUserId)
+                ->where('report_id', $item->report_id)
+                ->orderBy('updated_at', 'DESC')
+                ->pluck('message')
+                ->first();
+        }
+
+        Log::info($data);
+
+        return response()->json([
+            'data' => $data,
+        ], 200);
+    }
+
+    public function getTicketMessage(Request $request)
+    {
+        $message = report_chats::where('report_id', $request->report_id)->get();
+
+        Log::info($message);
+        return response()->json([
+            'data' => $message,
+        ], 200);
+    }
+
+    public function sendTicketMessage(Request $request)
+    {
+        $currentUserId = auth()->id();
+        $message = new report_chats;
+        $message->report_id = $request->report_id;
+        $message->user_id = $currentUserId;
+        $message->message = $request->message;
+        $message->save();
+
+        broadcast(new updateTicketChat($message))->toOthers();
+        broadcast(new updateListTicket('1'))->toOthers();
+
+        return response()->json([
+            'data' => $message,
         ], 200);
     }
 
@@ -106,15 +165,6 @@ class ProfileController extends Controller
 
         return response([
             'message' => 'Password changed successfully',
-        ], 200);
-    }
-
-    public function ticketList(Request $request)
-    {
-        $currentUserId = auth()->id();
-        $data = report::where('user_id', $currentUserId)->get();
-        return response()->json([
-            'data' => $data,
         ], 200);
     }
 
@@ -177,6 +227,45 @@ class ProfileController extends Controller
 
         return response()->json([
             'balance' => abs($user->balance),
+        ], 200);
+    }
+
+    public function getTransaction()
+    {
+        $currentUserId = auth()->id();
+        $data = transactions::where('user_id', $currentUserId)->orderBy('updated_at', 'desc')
+            ->get();
+
+        LOg::info($data);
+
+        return response()->json([
+            'data' => $data,
+        ], 200);
+    }
+
+    public function withdrawBalance(Request $request)
+    {
+        $currentUserId = auth()->id();
+        $user = user::find($currentUserId);
+
+        if ($user->balance < $request->amount) {
+            return response()->json([
+                'message' => 'Balance not enough',
+            ], 400);
+        }
+
+        $user->balance = $user->balance - $request->amount;
+        $user->save();
+
+        $transaction = new transactions;
+        $transaction->user_id = $currentUserId;
+        $transaction->amount = $request->amount;
+        $transaction->type = 'balance_withdraw';
+        $transaction->description = 'withdraw balance for user_id ' . $currentUserId;
+        $transaction->save();
+
+        return response()->json([
+            'message' => 'Balance Withdrawed',
         ], 200);
     }
 }

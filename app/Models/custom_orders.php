@@ -19,5 +19,9 @@ class custom_orders extends Model
         'delivery_days',
         'status',
         'expiration_date',
+        'onsite_date',
+        'address',
+        'lat',
+        'lng',
     ];
 }

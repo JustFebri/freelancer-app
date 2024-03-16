@@ -105,14 +105,6 @@
                                                                     @enderror
                                                                 </div>
                                                                 <div class="mb-3">
-                                                                    <label for="InputLocation{{ $item->freelancer_id }}"
-                                                                        class="form-label">Location</label>
-                                                                    <input type="text" class="form-control"
-                                                                        id="InputLocation{{ $item->freelancer_id }}"
-                                                                        autocomplete="off" placeholder="Location"
-                                                                        name="location" value="{{ $item->location }}">
-                                                                </div>
-                                                                <div class="mb-3">
                                                                     <label
                                                                         for="Inputidentity_number{{ $item->freelancer_id }}"
                                                                         class="form-label">Identity Number</label>

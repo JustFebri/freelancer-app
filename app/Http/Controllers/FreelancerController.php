@@ -24,7 +24,7 @@ class FreelancerController extends Controller
         $db_freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where(function ($query) {
                 $query->where('f.IsApproved', '=', 'approved')
                     ->orWhereNull('f.IsApproved');
@@ -44,7 +44,7 @@ class FreelancerController extends Controller
         $db_freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.IsApproved', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset', 'u.name', 'u.email', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where('f.IsApproved', '=', 'pending')
             ->latest()
             ->get();
@@ -54,7 +54,6 @@ class FreelancerController extends Controller
     public function freelancerStore(request $request)
     {
         $currentTimestamp = Carbon::now();
-        $location = $request->location ?? '';
         $description = $request->description ?? '';
 
         $request->validate([
@@ -79,7 +78,6 @@ class FreelancerController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'location' => $location,
                 'picture_id' => $newPicture->picture_id,
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
@@ -118,7 +116,6 @@ class FreelancerController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'location' => $location,
                 'picture_id' => null,
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
@@ -193,7 +190,6 @@ class FreelancerController extends Controller
         $profileData = user::find($id);
         $freelancerData = DB::table('freelancer')->where('user_id', $id)->first();
         $currentTimestamp = Carbon::now();
-        $location = $request->location ?? '';
         $desc = $request->information ?? '';
 
         if ($profileData->email == $request->email && $freelancerData->identity_number == $request->identity_number) {
@@ -242,7 +238,6 @@ class FreelancerController extends Controller
                 $profileData->update([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'location' => $location,
                     'updated_at' => $currentTimestamp,
                     'status' => $request->status
                 ]);
@@ -272,7 +267,6 @@ class FreelancerController extends Controller
                 $profileData->update([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'location' => $location,
                     'updated_at' => $currentTimestamp,
                     'picture_id' => $id,
                     'status' => $request->status
@@ -293,7 +287,6 @@ class FreelancerController extends Controller
             $profileData->update([
                 'name' => $request->name,
                 'email' => $request->email,
-                'location' => $location,
                 'updated_at' => $currentTimestamp,
                 'status' => $request->status
             ]);
@@ -316,7 +309,7 @@ class FreelancerController extends Controller
         $freelancer = DB::table('freelancer as f')
             ->leftJoin('user as u', 'f.user_id', '=', 'u.user_id')
             ->leftJoin('picture as p', 'u.picture_id', '=', 'p.picture_id')
-            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset',  'u.name', 'u.email', 'u.location', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
+            ->select('f.freelancer_id', 'f.identity_number', 'f.description', 'f.rating', 'f.revenue', 'u.user_id', 'u.picture_id', 'p.picasset',  'u.name', 'u.email', 'u.created_at', 'u.updated_at', 'u.status', 'u.profile_type')
             ->where('f.freelancer_id', $freelancer_id)
             ->first();
 
@@ -347,7 +340,6 @@ class FreelancerController extends Controller
                 'p.picasset',
                 'u.name',
                 'u.email',
-                'u.location',
                 'u.created_at',
                 'u.updated_at',
                 'u.status',

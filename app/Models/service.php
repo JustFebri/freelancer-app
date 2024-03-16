@@ -22,6 +22,8 @@ class service extends Model
         'status',
         'custom_order',
         'IsApproved',
+        'lat',
+        'lng'
     ];
 
     public function user(){

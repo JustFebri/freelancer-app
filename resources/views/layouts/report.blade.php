@@ -15,8 +15,19 @@
                                                     $id = Auth::user()->admin_id;
                                                     $profileData = App\Models\admin::find($id);
                                                     if (!empty($profileData->picture_id)) {
-                                                        $profileData = App\Models\admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
-                                                            ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
+                                                        $profileData = App\Models\admin::join(
+                                                            'picture',
+                                                            'admin.picture_id',
+                                                            '=',
+                                                            'picture.picture_id',
+                                                        )
+                                                            ->select(
+                                                                'picture.picasset',
+                                                                'admin.name',
+                                                                'admin.email',
+                                                                'admin.created_at',
+                                                                'admin.updated_at',
+                                                            )
                                                             ->find($id);
                                                     }
                                                 @endphp
@@ -129,14 +140,16 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-lg-6 chat-content border-end-lg">
+
+
+                            <div class="col-lg-6 chat-content border-end-lg" style="display: flex; flex-direction: column;">
                                 <div class="chat-header border-bottom pb-2">
                                     <div class="d-flex justify-content-center">
                                         <h5 id="title-report">Lorep Ipsum</h3>
                                     </div>
                                 </div>
-                                <div class="chat-body ps ps--active-y">
-                                    <ul class="messages">
+                                <div class="chat-body ps ps--active-y" style="flex: 1; overflow-y: auto;">
+                                    <ul class="messages" id="messages-list">
                                         <li class="message-item friend">
                                             <img style="object-fit: cover;" id="report-avatar"
                                                 src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
@@ -144,7 +157,8 @@
                                             <div class="content">
                                                 <div class="message">
                                                     <div class="bubble">
-                                                        <p id="ticket-desc">Lorem Ipsum is simply dummy text of the printing
+                                                        <p id="ticket-desc">Lorem Ipsum is simply dummy text of the
+                                                            printing
                                                             and typesetting
                                                             industry.</p>
                                                     </div>
@@ -152,7 +166,7 @@
                                                 </div>
                                             </div>
                                         </li>
-                                        {{-- <li class="message-item me">
+                                        <li class="message-item me">
                                             <img src="https://via.placeholder.com/36x36" class="img-xs rounded-circle"
                                                 alt="avatar">
                                             <div class="content">
@@ -169,17 +183,19 @@
                                                     <span>8:13 PM</span>
                                                 </div>
                                             </div>
-                                        </li> --}}
+                                        </li>
                                     </ul>
-                                    <div class="ps__rail-x" style="left: 0px; bottom: -85px;">
-                                        <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
+                                    <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
+                                        <div class="ps__thumb-x" tabindex="0"
+                                            style="left: 0px; width: 0px;"></div>
                                     </div>
-                                    <div class="ps__rail-y" style="top: 85px; height: 621px; right: 0px;">
-                                        <div class="ps__thumb-y" tabindex="0" style="top: 75px; height: 546px;">
-                                        </div>
+                                    <div class="ps__rail-y" style="top: 0px; height: auto; right: 0px;">
+                                        <div class="ps__thumb-y" tabindex="0"
+                                            style="top: 0px; height: auto;"></div>
                                     </div>
                                 </div>
-                                <div class="chat-footer d-flex">
+                                <div class="chat-footer d-flex"
+                                    style="position: sticky; bottom: 0; background-color: #fff; padding: 10px; border-top: 1px solid #dee2e6;">
                                     <form class="search-form flex-grow-1 me-2">
                                         <div class="input-group">
                                             <input type="text" class="form-control rounded-pill" id="chatForm"
@@ -187,7 +203,8 @@
                                         </div>
                                     </form>
                                     <div>
-                                        <button type="button" class="btn btn-primary btn-icon rounded-circle">
+                                        <button type="button" class="btn btn-primary btn-icon rounded-circle"
+                                            onclick="sendMessage()">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -200,6 +217,12 @@
                                     </div>
                                 </div>
                             </div>
+
+
+
+
+
+
                             <div class="col-lg-3 ticket-content">
                                 <div style="text-align: center">
                                     <img src="{{ url('backend/assets/images/no_image.jpg') }}" style="object-fit: cover;"
@@ -279,16 +302,15 @@
             var name = document.getElementById("ticket_name");
             var email = document.getElementById("ticket_email");
             var title = document.getElementById("title-report");
-            var desc = document.getElementById("ticket-desc");
+            // var desc = document.getElementById("ticket-desc");
 
             $('.list-group-item').removeClass('active');
             $(element).addClass('active');
-            console.log(item);
             if (item.picasset === null || item.picasset === undefined) {
                 avatar.src = "{{ url('backend/assets/images/no_image.jpg') }}";
             } else {
                 avatar.src = item.picasset;
-                reAvatar.src = item.picasset;
+                // reAvatar.src = item.picasset;
             }
             if (item.order_id === null || item.order_id === undefined) {
                 order_id.textContent = 'Null';
@@ -302,9 +324,61 @@
             title.textContent = item.report_type;
             name.textContent = item.name;
             email.textContent = item.email;
-            // desc.textContent = item.description;
-            desc.innerHTML = nl2br(item.description);
+            if (item.order_id != null) {
+                order_id.textContent = item.order_id;
+            }
 
+            // desc.textContent = item.description;
+            // desc.innerHTML = nl2br(item.description);
+
+            var messagesList = document.getElementById('messages-list');
+            messagesList.innerHTML = '';
+
+            item.message.forEach(function(msg) {
+                console.log(msg);
+                var messageItemClass = msg.user_id == null ? 'me' : 'friend';
+                var listItem = document.createElement('li');
+                listItem.className = 'message-item ' + messageItemClass;
+
+                var avatarSrc = msg.user_id == null ?
+                    '{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}' :
+                    item.picasset == null ? avatar.src = "{{ url('backend/assets/images/no_image.jpg') }}" : avatar
+                    .src = item.picasset;
+                var avatarAlt = msg.user_id == null ? 'Your Avatar' : 'Friend\'s Avatar';
+                var avatarImg = document.createElement('img');
+                avatarImg.style.objectFit = 'cover';
+                avatarImg.src = avatarSrc;
+                avatarImg.alt = avatarAlt;
+                avatarImg.className = 'img-xs rounded-circle';
+                listItem.appendChild(avatarImg);
+
+                var contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+
+                var messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+
+                var bubbleDiv = document.createElement('div');
+                bubbleDiv.className = 'bubble';
+
+                var messageText = document.createElement('p');
+                messageText.textContent = msg.message;
+
+                bubbleDiv.appendChild(messageText);
+                messageDiv.appendChild(bubbleDiv);
+                contentDiv.appendChild(messageDiv);
+
+                var messageTime = document.createElement('span');
+                messageTime.textContent = msg.created_at; // Adjust this to the actual timestamp field
+                contentDiv.appendChild(messageTime);
+
+                listItem.appendChild(contentDiv);
+                messagesList.appendChild(listItem);
+            });
+            var windowHeight = window.innerHeight;
+            var chatBody = document.querySelector('.chat-body');
+            chatBody.style.height = windowHeight + 'px';
+            chatBody.scrollTop = chatBody.scrollHeight;
             $('#dropdownMenuButton').text(item.status);
         }
 
@@ -322,6 +396,80 @@
                     ':ticketId', encodeURIComponent(ticketId)).replace(':status', encodeURIComponent(value)),
                 success: function(response) {
                     window.location.href = "{{ route('report') }}";
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function sendMessage() {
+            var ticketId = document.getElementById('ticket_id').textContent.trim();
+            var messageInput = document.getElementById('chatForm');
+            var message = messageInput.value.trim();
+
+            console.log(ticketId);
+            console.log(message);
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                type: 'POST',
+                url: "{{ route('report.sent', ['report_id' => ':ticketId', 'message' => ':message']) }}".replace(
+                    ':ticketId', encodeURIComponent(ticketId)).replace(':message', encodeURIComponent(message)),
+                success: function(response) {
+                    var updatedReport = response.updatedReport;
+                    console.log(updatedReport);
+                    messageInput.value = '';
+
+                    var messagesList = document.getElementById('messages-list');
+
+                    var messageItemClass = updatedReport.user_id == null ? 'me' : 'friend';
+                    var listItem = document.createElement('li');
+                    listItem.className = 'message-item ' + messageItemClass;
+
+                    var avatarSrc = updatedReport.user_id == null ?
+                        '{{!empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg')}}' :
+                        item.picasset == null ? avatar.src =
+                        "{{ url('backend/assets/images/no_image.jpg') }}" : avatar
+                        .src = item.picasset;
+                    var avatarAlt = updatedReport.user_id == null ? 'Your Avatar' : 'Friend\'s Avatar';
+                    var avatarImg = document.createElement('img');
+                    avatarImg.style.objectFit = 'cover';
+                    avatarImg.src = avatarSrc;
+                    avatarImg.alt = avatarAlt;
+                    avatarImg.className = 'img-xs rounded-circle';
+                    listItem.appendChild(avatarImg);
+
+                    var contentDiv = document.createElement('div');
+                    contentDiv.className = 'content';
+
+                    var messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+
+                    var bubbleDiv = document.createElement('div');
+                    bubbleDiv.className = 'bubble';
+
+                    var messageText = document.createElement('p');
+                    messageText.textContent = updatedReport.message;
+
+                    bubbleDiv.appendChild(messageText);
+                    messageDiv.appendChild(bubbleDiv);
+                    contentDiv.appendChild(messageDiv);
+
+                    var messageTime = document.createElement('span');
+                    messageTime.textContent = updatedReport
+                        .created_at; // Adjust this to the actual timestamp field
+                    contentDiv.appendChild(messageTime);
+
+                    listItem.appendChild(contentDiv);
+                    messagesList.appendChild(listItem);
+
+                    var windowHeight = window.innerHeight;
+                    var chatBody = document.querySelector('.chat-body');
+                    chatBody.style.height = windowHeight + 'px';
+                    chatBody.scrollTop = chatBody.scrollHeight;
                 },
                 error: function(error) {
                     console.log(error);

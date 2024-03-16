@@ -5,20 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class report extends Model
+class report_chats extends Model
 {
     use HasFactory;
-    protected $table = 'report';
-    protected $primaryKey = 'report_id';
+    protected $table = 'report_chats';
+    protected $primaryKey = 'reportChat_id';
 
     protected $fillable = [
-        'report_id',
+        'reportChat_id',
         'user_id',
-        'order_id',
-        'report_type',
-        'description',
-        'status',
-        'subject',
+        'report_id',
         'admin_id',
+        'message',
+
     ];
 }

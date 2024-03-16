@@ -8,6 +8,8 @@ use App\Events\UpdateOrder;
 use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\StoreMessageRequest;
+use App\Mail\FreelancerAcceptRevisionRequest;
+use App\Mail\FreelancerDeclineRevisionRequest;
 use App\Mail\FreelancerDeliveredWork;
 use App\Mail\FreelancerDeliveredWorkWithoutAttachment;
 use App\Models\category;
@@ -24,6 +26,7 @@ use App\Models\picture;
 use App\Models\portfolio;
 use App\Models\portfolio_img;
 use App\Models\review;
+use App\Models\revision;
 use App\Models\service;
 use App\Models\service_img;
 use App\Models\service_package;
@@ -161,6 +164,8 @@ class FreelancerController extends Controller
             'title' => $request->title,
             'description' => $request->desc,
             'location' => $request->location ?? '',
+            'lat' => $request->lat,
+            'lng' => $request->lng,
             'type' => $request->type,
             'custom_order' => $request->customOrder,
             'IsApproved' => 'pending'
@@ -215,6 +220,9 @@ class FreelancerController extends Controller
         $service->type = $request->type;
         $service->custom_order = $request->customOrder;
         $service->IsApproved = 'pending';
+        $service->lat = $request->lat;
+        $service->lng = $request->lng;
+        $service->location = $request->location;
         $service->save();
 
         service_package::where('service_id', $request->serviceId)->delete();
@@ -312,7 +320,7 @@ class FreelancerController extends Controller
             ->leftJoin('category as c', 'c.category_id', '=', 'sc.category_id')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->where('s.service_id', '=', $serviceId)
-            ->select('s.type', 'c.category_name', 'sc.subcategory_name', 's.custom_order', 's.location', 's.title', 's.description', 's.service_id')
+            ->select('s.type', 'c.category_name', 'sc.subcategory_name', 's.custom_order', 's.location', 's.title', 's.description', 's.service_id', 's.location', 's.lat', 's.lng')
             ->first();
 
         $data->packages = DB::table('service_package as sp')->where('sp.service_id', '=', $data->service_id)->get();
@@ -326,15 +334,32 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    function getDropdownItem()
+    function getDropdownItem(string $type)
     {
         $currentUserId = auth()->id();
 
-        $data = DB::table('service as s')
-            ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
-            ->where('f.user_id', $currentUserId)
-            ->select('s.service_id', 's.title')
-            ->get();
+        if ($type == 'all') {
+            $data = DB::table('service as s')
+                ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
+                ->where('f.user_id', $currentUserId)
+                ->select('s.service_id', 's.title')
+                ->get();
+        } else if ($type == 'Digital Service') {
+            $data = DB::table('service as s')
+                ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
+                ->where('f.user_id', $currentUserId)
+                ->where('s.type', '=', 'Digital Service')
+                ->select('s.service_id', 's.title')
+                ->get();
+        } else {
+            $data = DB::table('service as s')
+                ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
+                ->where('f.user_id', $currentUserId)
+                ->where('s.type', '=', 'On-Site Service')
+                ->select('s.service_id', 's.title')
+                ->get();
+        }
+
 
         return response()->json([
             'data' => $data,
@@ -355,6 +380,10 @@ class FreelancerController extends Controller
             'delivery_days' => $request->delivery_days,
             'status' => 'pending',
             'expiration_date' => $request->expiration_date,
+            'onsite_date' => $request->onsite_date,
+            'address' => $request->loc,
+            'lat' => $request->lat,
+            'lng' => $request->lng,
         ]);
 
         return response()->json([
@@ -494,10 +523,20 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function getReviews(Request $request)
+    public function getReviews()
     {
         $currentUserId = auth()->id();
         $record = freelancer::where('user_id', '=', $currentUserId)->first();
+        $review = DB::table('review as r')
+            ->leftJoin('user as u', 'u.user_id', '=', 'r.client_id')
+            ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
+            ->where('r.freelancer_id', $record->freelancer_id)
+            ->orderBy('r.updated_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'reviews' => $review,
+        ], 200);
     }
 
     public function getPortfolio(Request $request)
@@ -704,19 +743,55 @@ class FreelancerController extends Controller
         }
 
         foreach ($package as $item) {
+            $tempOrder = order::find($item->order_id);
+            $item->lat = $tempOrder->lat;
+            $item->lng = $tempOrder->lng;
+            $item->address = $tempOrder->address;
+            Log::info($item->lat . ' ' . $item->lng);
+            Log::info($item->address);
+            Log::info($item->order_id);
+
             $data1 = service_package::find($item->package_id);
             $data2 = service::find($data1->service_id);
 
             $item->service_name = $data2->title;
             $item->type_name = $data1->title;
+            $item->data = $data1;
+
+            if ($item->order_status == 'revision requested') {
+                $item->revData = revision::where('order_id', $item->order_id)->where('status', 'pending')->first();
+            } else if ($item->order_status == 'in progress') {
+                $revdata = revision::where('order_id', $item->order_id)->where('status', 'accepted')->first();
+                if ($revdata) {
+                    $item->revData = $revdata;
+                }
+            }
         }
 
         foreach ($custom_orders as $item) {
+            $tempOrder = order::find($item->order_id);
+            $item->lat = $tempOrder->lat;
+            $item->lng = $tempOrder->lng;
+            $item->address = $tempOrder->address;
+            Log::info($item->lat . ' ' . $item->lng);
+            Log::info($item->address);
+            Log::info($item->order_id);
+
             $data1 = custom_orders::find($item->custom_id);
             $data2 = service::find($data1->service_id);
 
             $item->service_name = $data2->title;
             $item->type_name = 'Custom Order';
+            $item->data = $data1;
+
+            if ($item->order_status == 'revision requested') {
+                $item->revData = revision::where('order_id', $item->order_id)->where('status', 'pending')->first();
+            } else if ($item->order_status == 'in progress') {
+                $revdata = revision::where('order_id', $item->order_id)->where('status', 'accepted')->first();
+                if ($revdata) {
+                    $item->revData = $revdata;
+                }
+            }
         }
 
         return response([
@@ -733,10 +808,20 @@ class FreelancerController extends Controller
             $order->order_status = 'in progress';
             if ($order->package_id != null) {
                 $package = service_package::find($order->package_id);
-                $order->due_date = Carbon::now()->addDays($package->delivery_days);
+
+                if ($order->onsite_date == null) {
+                    $order->due_date = Carbon::now()->addDays($package->delivery_days);
+                } else {
+                    $order->due_date = Carbon::parse($order->onsite_date)->addDays($package->delivery_days);
+                }
             } else {
                 $custom = custom_orders::find($order->custom_id);
-                $order->due_date = Carbon::now()->addDays($custom->delivery_days);
+
+                if ($order->onsite_date == null) {
+                    $order->due_date = Carbon::now()->addDays($custom->delivery_days);
+                } else {
+                    $order->due_date = Carbon::parse($order->onsite_date)->addDays($custom->delivery_days);
+                }
             }
             $order->save();
         } else {
@@ -777,19 +862,31 @@ class FreelancerController extends Controller
         $order->due_date = Carbon::now()->addDays(3);
         $order->save();
 
-        $delivery = new delivery;
-        $delivery->order_id = $request->order_id;
+        $tempDeliv = delivery::where('order_id', $request->order_id)->first();
+        if (!$tempDeliv) {
+            $delivery = new delivery;
+            $delivery->order_id = $request->order_id;
 
-        if ($request->file('fileUrl') != null) {
             $file = $request->file('fileUrl')->store('public/files');
             $filename = $request->file('fileUrl')->hashName();
             $path = 'public/files/' . $filename;
             $url = asset(Storage::url($path));
             $delivery->fileUrl = $url;
-        }
 
-        $delivery->description = $request->desc;
-        $delivery->save();
+            $delivery->description = $request->desc;
+            $delivery->save();
+        } else {
+            $filename = basename($tempDeliv->fileUrl);
+            Storage::delete('public/files/' . $filename);
+
+            $file = $request->file('fileUrl')->store('public/files');
+            $filename = $request->file('fileUrl')->hashName();
+            $path = 'public/files/' . $filename;
+            $url = asset(Storage::url($path));
+            $tempDeliv->fileUrl = $url;
+            $tempDeliv->description = $request->desc;
+            $tempDeliv->save();
+        }
 
         broadcast(new UpdateOrder($order->client_id))->toOthers();
         $freelancer = freelancer::find($order->freelancer_id);
@@ -797,7 +894,7 @@ class FreelancerController extends Controller
 
         $freelancer = user::find($freelancer->user_id);
         $client = user::find($order->client_id);
-        
+
         if ($request->file('fileUrl') != null) {
             Mail::to($client->email)->send(new FreelancerDeliveredWork(
                 $freelancer->name,
@@ -805,7 +902,7 @@ class FreelancerController extends Controller
                 $client->name,
                 storage_path('app/' . $path),
             ));
-        }else{
+        } else {
             Mail::to($client->email)->send(new FreelancerDeliveredWorkWithoutAttachment(
                 $freelancer->name,
                 $request->desc,
@@ -815,6 +912,55 @@ class FreelancerController extends Controller
 
         return response([
             'message' => 'Order Delivered',
+        ], 200);
+    }
+
+    public function requestConfirmation(Request $request)
+    {
+        $reqRev = revision::where('order_id', $request->order_id)->where('status', 'pending')->first();
+        $order = order::find($request->order_id);
+        $userClient = user::find($order->client_id);
+
+        if ($request->status == 'accept') {
+            $reqRev->status = 'accepted';
+            $reqRev->save();
+
+            $order->order_status = 'in progress';
+            $order->revision -= 1;
+            $order->due_date = Carbon::now()->addDays(7);
+            $order->save();
+
+
+            Mail::to($userClient->email)->send(
+                new FreelancerAcceptRevisionRequest(
+                    $userClient->name,
+                    $request->order_id,
+                ),
+            );
+        } else {
+            $reqRev->status = 'rejected';
+            $reqRev->response = $request->response;
+            $reqRev->save();
+
+            $order->order_status = 'delivered';
+            $order->due_date = Carbon::now()->addDays(3);
+            $order->save();
+
+            Mail::to($userClient->email)->send(
+                new FreelancerDeclineRevisionRequest(
+                    $userClient->name,
+                    $request->order_id,
+                    $reqRev->response,
+                ),
+            );
+        }
+
+        broadcast(new UpdateOrder($order->client_id))->toOthers();
+        $freelancer = freelancer::find($order->freelancer_id);
+        broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        return response([
+            'message' => 'Revision Request Updated',
         ], 200);
     }
 }

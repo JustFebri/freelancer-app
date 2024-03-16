@@ -58,16 +58,6 @@
                             <p class="text-muted">{{ $formattedDate }}</p>
                         </div>
                         <div class="mt-3">
-                            <label class="tx-11 fw-bolder mb-0 text-uppercase">From</label>
-                            <p class="text-muted">
-                                @if ($freelancer->location == null)
-                                    Null
-                                @else
-                                    {{ $freelancer->location }}
-                                @endif
-                            </p>
-                        </div>
-                        <div class="mt-3">
                             <label class="tx-11 fw-bolder mb-0 text-uppercase">Email</label>
                             <p class="text-muted">{{ $freelancer->email }}</p>
                         </div>

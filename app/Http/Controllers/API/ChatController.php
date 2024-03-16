@@ -25,7 +25,6 @@ class ChatController extends Controller
 {
     public function createChat(StoreChatRequest $request)
     {
-        Log::info('testing');
         $userId = auth()->id();
         $otherUserId = $request->otherUserId;
 

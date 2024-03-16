@@ -14,9 +14,6 @@
                         </span>
                     @endif
                 </a>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddClient">
-                    <i data-feather="file-plus" style="padding-right: 5px"></i> Add Service
-                </button>
                 <div class="modal fade" id="modalAddClient" tabindex="-1" aria-labelledby="modalAddClientTitle"
                     aria-hidden="true" style="display: none;">
                     <div class="modal-dialog modal-dialog-centered">
@@ -41,11 +38,6 @@
                                         <label for="InputPassword" class="form-label">Password</label>
                                         <input type="password" class="form-control" id="InputPassword" autocomplete="off"
                                             placeholder="Password">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="InputLocation" class="form-label">Location</label>
-                                        <input type="text" class="form-control" id="InputLocation" autocomplete="off"
-                                            placeholder="Location">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label" for="formFile">Profile Picture</label>
@@ -78,12 +70,12 @@
                                         <th>Product</th>
                                         <th>Freelancer</th>
                                         <th>Type</th>
+                                        <th>Location</th>
                                         <th>Category</th>
                                         <th>Sub Category</th>
                                         <th>Status</th>
                                         <th>Created At</th>
                                         <th>Updated At</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -121,6 +113,13 @@
                                                     href="{{ route('freelancer.profile', $item->freelancer_id) }}">{{ $item->name }}</a>
                                             </td>
                                             <td>{{ $item->type }}</td>
+                                            <td>
+                                                @if ($item->location == null)
+                                                    Null
+                                                @else
+                                                    {{ $item->location }}
+                                                @endif
+                                            </td>
                                             <td>{{ $item->category_name }}</td>
                                             <td>{{ $item->subcategory_name }}</td>
                                             <td>
@@ -132,10 +131,6 @@
                                             </td>
                                             <td>{{ $item->created_at }}</td>
                                             <td>{{ $item->updated_at }}</td>
-                                            <td>
-                                                <a href="" class="btn btn-inverse-warning">Edit</a>
-                                                <a href="" class="btn btn-inverse-danger">Delete</a>
-                                            </td>
                                         </tr>
                                     @endforeach
 

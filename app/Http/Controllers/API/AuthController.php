@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\ForgotPasswordRequest;
 use App\Http\Requests\API\LoginRequest;
 use App\Http\Requests\API\RegisterClientRequest;
 use App\Http\Requests\API\RegisterFreelancerRequest;
 use App\Http\Requests\API\RegisterRequest;
+use App\Http\Requests\API\ResetPasswordRequest;
+use App\Http\Requests\API\TokenRequest;
+use App\Mail\ResetPassword;
 use App\Models\client;
+use App\Models\forgot_password;
 use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\user;
@@ -15,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
@@ -22,14 +28,12 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $request->validated();
-        $location = $request->location ?? '';
         $currentTimestamp = Carbon::now();
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'location' => $location,
             'picture_id' => null,
             'status' => 'active',
             'email_verified_at' => null,
@@ -40,7 +44,7 @@ class AuthController extends Controller
 
         $user = user::create($userData);
 
-        $token = $user->createToken('freelancer-app')->plainTextToken;
+        $token = $user->createToken('authToken')->plainTextToken;
 
         client::create([
             'user_id' => $user->user_id,
@@ -70,7 +74,7 @@ class AuthController extends Controller
         }
 
         $this->clearAttempts($request);
-        $token = $user->createToken('freelancer-app')->plainTextToken;
+        $token = $user->createToken('authToken')->plainTextToken;
         $currentTimestamp = Carbon::now();
         $user->last_login = $currentTimestamp;
         $user->save();
@@ -90,6 +94,84 @@ class AuthController extends Controller
 
         return response([
             'message' => 'User successfully logged out',
+        ], 200);
+    }
+
+    public function forgot(ForgotPasswordRequest $request)
+    {
+        $user = user::where('email', $request->email)->first();
+
+        if (!$user || !$user->email) {
+            return response([
+                'message' => 'Incorret email address provided',
+            ], 404);
+        }
+
+        $resetPassword = str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
+        if (!$userPassReset = forgot_password::where('email', $user->email)->first()) {
+            forgot_password::create([
+                'email' => $user->email,
+                'token' => $resetPassword,
+            ]);
+        } else {
+            $userPassReset->update([
+                'email' => $user->email,
+                'token' => $resetPassword,
+            ]);
+        }
+
+        Mail::to($user->email)->send(new ResetPassword(
+            $resetPassword,
+        ));
+
+        return response([
+            'message' => 'A Code has been sent to your email address',
+        ], 200);
+    }
+
+    public function checkCode(TokenRequest $request)
+    {
+        $attributes = $request->validated();
+
+        $user = user::where('email', $attributes['email'])->first();
+        if (!$user) {
+            return response([
+                'message' => 'Incorret email address provided',
+            ], 404);
+        }
+
+        $resetRequest = forgot_password::where('email', $request->email)->first();
+        if (!$resetRequest || $resetRequest->token != $request->token) {
+            return response([
+                'message' => 'Token mismatch',
+            ], 400);
+        }
+
+        return response([
+            'message' => 'Code Verificated',
+        ], 200);
+    }
+
+    public function reset(ResetPasswordRequest $request)
+    {
+        $attributes = $request->validated();
+
+        $user = user::where('email', $attributes['email'])->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        $user->tokens()->delete();
+        $resetRequest = forgot_password::where('email', $request->email)->first();
+        $resetRequest->delete();
+
+        $token = $user->createToken('authToken')->plainTextToken;
+
+        $picture = picture::where('picture_id', '=', $user->picture_id)->first();
+        return response([
+            'user' => $user,
+            'picture' => $picture ? $picture->piclink : null,
+            'token' => $token,
+            'message' => 'Password Reset Sucess',
         ], 200);
     }
 }
