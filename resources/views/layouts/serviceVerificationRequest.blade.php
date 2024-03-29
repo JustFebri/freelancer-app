@@ -21,7 +21,6 @@
                                         <th>IsApproved</th>
                                         <th>Created At</th>
                                         <th>Updated At</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -66,10 +65,6 @@
                                             <td>{{ $item->IsApproved }}</td>
                                             <td>{{ $item->created_at }}</td>
                                             <td>{{ $item->updated_at }}</td>
-                                            <td>
-                                                <a href="" class="btn btn-inverse-warning">Edit</a>
-                                                <a href="" class="btn btn-inverse-danger">Delete</a>
-                                            </td>
                                         </tr>
                                     @endforeach
 

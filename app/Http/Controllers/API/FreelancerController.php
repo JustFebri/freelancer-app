@@ -7,11 +7,27 @@ use App\Events\UpdateMessage;
 use App\Events\UpdateOrder;
 use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\AddPortfolioRequest;
+use App\Http\Requests\API\AddServiceRequest;
+use App\Http\Requests\API\CustomOrderRequest;
+use App\Http\Requests\API\DeliverNowRequest;
+use App\Http\Requests\API\FreelancerActivationRequest;
+use App\Http\Requests\API\OrderConfirmationRequest;
+use App\Http\Requests\API\RevisionConfirmationRequest;
+use App\Http\Requests\API\SetCustomOrderStatusRequest;
 use App\Http\Requests\API\StoreMessageRequest;
+use App\Http\Requests\API\UpdatePortfolioRequest;
+use App\Http\Requests\API\UpdateSellerProfileRequest;
+use App\Http\Requests\API\UpdateServiceRequest;
+use App\Mail\AcceptOrder;
 use App\Mail\FreelancerAcceptRevisionRequest;
+use App\Mail\FreelancerAccountActivationRequest;
 use App\Mail\FreelancerDeclineRevisionRequest;
 use App\Mail\FreelancerDeliveredWork;
 use App\Mail\FreelancerDeliveredWorkWithoutAttachment;
+use App\Mail\FreelancerServiceAddRequest;
+use App\Mail\FreelancerServiceUpdateRequest;
+use App\Mail\RejectOrder;
 use App\Models\category;
 use App\Models\custom_orders;
 use App\Models\freelancer;
@@ -45,7 +61,7 @@ use Illuminate\Support\Facades\Mail;
 
 class FreelancerController extends Controller
 {
-    public function freelancerActivation(Request $request)
+    public function freelancerActivation(FreelancerActivationRequest $request)
     {
         $currentUserId = auth()->id();
         $user = user::find($currentUserId);
@@ -146,12 +162,14 @@ class FreelancerController extends Controller
             ]);
         }
 
+        Mail::to(config('custom.admin_mail'))->send(new FreelancerAccountActivationRequest($request->nikname));
+
         return response([
             'message' => 'Verification request has been successfully created',
         ], 201);
     }
 
-    public function packageActivation(Request $request)
+    public function packageActivation(AddServiceRequest $request)
     {
         $currentUserId = auth()->id();
         $record = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -204,13 +222,18 @@ class FreelancerController extends Controller
             }
         }
 
+        Mail::to(config('custom.admin_mail'))->send(new FreelancerServiceAddRequest($request->title, $request->desc));
+
         return response([
             'message' => 'Service request has been successfully created',
         ], 201);
     }
 
-    public function updateService(Request $request)
+    public function updateService(UpdateServiceRequest $request)
     {
+        $currentUserId = auth()->id();
+        $record = user::find($currentUserId);
+
         $result = sub_category::where('subcategory_name', $request->subCategory)->value('subcategory_id');
 
         $service = service::find($request->serviceId);
@@ -222,7 +245,7 @@ class FreelancerController extends Controller
         $service->IsApproved = 'pending';
         $service->lat = $request->lat;
         $service->lng = $request->lng;
-        $service->location = $request->location;
+        $service->location = $request->location ?? '';
         $service->save();
 
         service_package::where('service_id', $request->serviceId)->delete();
@@ -239,8 +262,6 @@ class FreelancerController extends Controller
                 'delivery_days' => $data->deliveryDays,
             ]);
         }
-
-
 
         if ($request->updateImage == 'true') {
             $listImage = service_img::where('service_id', $request->serviceId)->get();
@@ -275,7 +296,7 @@ class FreelancerController extends Controller
             }
         }
 
-
+        Mail::to(config('custom.admin_mail'))->send(new FreelancerServiceUpdateRequest($record->name, $record->email));
 
         return response([
             'message' => 'Service Updated',
@@ -366,7 +387,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    function createCustomOrder(Request $request)
+    function createCustomOrder(CustomOrderRequest $request)
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', $currentUserId)->first();
@@ -391,7 +412,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function setCustomOrderStatus(Request $request)
+    public function setCustomOrderStatus(SetCustomOrderStatusRequest $request)
     {
         $customOrder = custom_orders::where('custom_id', $request->custom_id)
             ->first();
@@ -414,7 +435,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function addPortfolio(Request $request)
+    public function addPortfolio(AddPortfolioRequest $request)
     {
         $currentUserId = auth()->id();
         $record = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -449,7 +470,7 @@ class FreelancerController extends Controller
             'message' => 'Service request has been successfully created',
         ], 200);
     }
-    public function getHeader(Request $request)
+    public function getHeader()
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -468,7 +489,7 @@ class FreelancerController extends Controller
             'count' => $reviewCount,
         ], 200);
     }
-    public function getAbout(Request $request)
+    public function getAbout()
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -491,7 +512,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function getServices(Request $request)
+    public function getServices()
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -539,7 +560,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function getPortfolio(Request $request)
+    public function getPortfolio()
     {
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
@@ -580,8 +601,9 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function updateSellerProfile(Request $request)
+    public function updateSellerProfile(UpdateSellerProfileRequest $request)
     {
+        Log::info($request);
         $currentUserId = auth()->id();
         $freelancer = freelancer::where('user_id', '=', $currentUserId)->first();
 
@@ -638,7 +660,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function updatePortfolio(Request $request)
+    public function updatePortfolio(UpdatePortfolioRequest $request)
     {
         $portfolio = portfolio::find($request->portfolioId);
         $portfolio->title = $request->title;
@@ -800,9 +822,15 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    function orderConfirmation(Request $request)
+    function orderConfirmation(OrderConfirmationRequest $request)
     {
         $order = order::find($request->order_id);
+
+        
+
+        $tempClient = user::find($order->client_id);
+        $tempFreelancer = freelancer::find($order->freelancer_id);
+        $tempUser = user::find($tempFreelancer->user_id);
 
         if ($request->status == 'accept') {
             $order->order_status = 'in progress';
@@ -824,6 +852,14 @@ class FreelancerController extends Controller
                 }
             }
             $order->save();
+
+            Mail::to($tempClient->email)->send(
+                new AcceptOrder(
+                    $request->order_id,
+                    $tempClient->name,
+                    $tempUser->name,
+                )
+            );
         } else {
             $order->order_status = 'cancelled';
             $order->save();
@@ -843,6 +879,14 @@ class FreelancerController extends Controller
             $transaction->type = 'client_refund';
             $transaction->description = 'refund for order ' . $request->order_id;
             $transaction->save();
+
+            Mail::to($tempClient->email)->send(
+                new RejectOrder(
+                    $request->order_id,
+                    $tempClient->name,
+                    $tempUser->name,
+                )
+            );
         }
 
         broadcast(new UpdateOrder($order->client_id))->toOthers();
@@ -855,7 +899,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function deliverNow(Request $request)
+    public function deliverNow(DeliverNowRequest $request)
     {
         $order = order::find($request->order_id);
         $order->order_status = 'delivered';
@@ -915,7 +959,7 @@ class FreelancerController extends Controller
         ], 200);
     }
 
-    public function requestConfirmation(Request $request)
+    public function requestConfirmation(RevisionConfirmationRequest $request)
     {
         $reqRev = revision::where('order_id', $request->order_id)->where('status', 'pending')->first();
         $order = order::find($request->order_id);

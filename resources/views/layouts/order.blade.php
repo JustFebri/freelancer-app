@@ -16,6 +16,8 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Service Id</th>
+                                        <th>Package Id</th>
+                                        <th>Custom Id</th>
                                         <th>Client Name</th>
                                         <th>Freelancer Name</th>
                                         <th>Status</th>
@@ -28,17 +30,18 @@
                                 <tbody>
                                     @foreach ($type as $key => $item)
                                         <tr>
-                                            <td><a href="#">{{$item->order_id}}</a></td>
-                                            <td>{{$item->service_id}}
-                                            </td>
-                                            <td>{{$item->buyer}}</td>
-                                            <td>{{$item->seller}}</td>
-                                            <td>{{$item->order_status}}</td>
-                                            <td>Rp {{$item->amount}}</td>
-                                            <td>{{$item->payment}}</td>
-                                            <td>{{$item->created_at}}</td>
+                                            <td><a href="#">{{ $item->order_id }}</a></td>
+                                            <td>{{ $item->service_id }}</td>
+                                            <td>{{ $item->package_id !== null ? $item->package_id : 'null' }}</td>
+                                            <td>{{ $item->custom_id !== null ? $item->custom_id : 'null' }}</td>
+                                            <td>{{ $item->buyer }}</td>
+                                            <td>{{ $item->seller }}</td>
+                                            <td>{{ $item->order_status }}</td>
+                                            <td>Rp {{ $item->amount }}</td>
+                                            <td>{{ $item->payment }}</td>
+                                            <td>{{ $item->created_at }}</td>
                                             <td>
-                                                {{$item->updated_at}}
+                                                {{ $item->updated_at }}
                                             </td>
                                         </tr>
                                     @endforeach

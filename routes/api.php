@@ -14,7 +14,9 @@ use App\Http\Controllers\API\SellerController;
 use App\Http\Controllers\API\ServiceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,13 +47,17 @@ Route::post('/forgot', [AuthController::class, 'forgot']);
 Route::post('/check', [AuthController::class, 'checkCode']);
 Route::post('/reset', [AuthController::class, 'reset']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::get('/email/verify/{id}', [AuthController::class, 'verify'])->name('verification.verify');
+Route::get('email/verify', [AuthController::class, 'notice'])->name('verification.notice');
+Route::get('/email/resend/{email}', [AuthController::class, 'resend'])->name('verification.resend');
+
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/getRequest', [ProfileController::class, 'getReq']);
     Route::get('/getUserType', [ProfileController::class, 'getUserType']);
     Route::post('/sendIssue', [ProfileController::class, 'sendIssue']);
     Route::get('/listTicket', [ProfileController::class, 'ticketList']);
-    Route::post('/getTicketMessage', [ProfileController::class, 'getTicketMessage']);
+    Route::get('/getTicketMessage/{report_id}', [ProfileController::class, 'getTicketMessage']);
     Route::post('/sendTicketMessage', [ProfileController::class, 'sendTicketMessage']);
 
     Route::post('/changeProfilePicture', [ProfileController::class, 'changeProfilePicture']);
@@ -106,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getAbout', [FreelancerController::class, 'getAbout']);
     Route::get('/getServices', [FreelancerController::class, 'getServices']);
     Route::get('/getPortfolio', [FreelancerController::class, 'getPortfolio']);
-    
+
     Route::get('/freelancer/getAllOrder/{status}', [FreelancerController::class, 'getAllOrder']);
     Route::delete('/deletePortfolio/{portfolio_id}', [FreelancerController::class, 'deletePortfolio']);
     Route::get('/getResult/{keyword}', [ServiceController::class, 'getResult']);
@@ -132,5 +138,5 @@ Route::post('/getResult/filterSubCategoryNotLogged', [ServiceController::class, 
 Route::get('/getPortfolio/{portfolio_id}', [FreelancerController::class, 'getPortfolioById']);
 
 Route::post('/midtrans/payment/webhook', [MidtransController::class, 'webhook']);
-Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
-Route::post('/payout/webhook/xendit', [PaymentController::class, 'webhook']);
+// Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
+// Route::post('/payout/webhook/xendit', [PaymentController::class, 'webhook']);

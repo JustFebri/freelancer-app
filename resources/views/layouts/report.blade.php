@@ -98,8 +98,9 @@
                                                                         <div class="row">
                                                                             <div class="col">
                                                                                 <p class="text-muted tx-13"
-                                                                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                                                                    {{ $item->description }}
+                                                                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                                                                    id="lastMesssage">
+                                                                                    {{ !empty($item->lastMessage) ? $item->lastMessage : $item->description }}
                                                                                 </p>
                                                                             </div>
                                                                         </div>
@@ -186,12 +187,10 @@
                                         </li>
                                     </ul>
                                     <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
-                                        <div class="ps__thumb-x" tabindex="0"
-                                            style="left: 0px; width: 0px;"></div>
+                                        <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
                                     </div>
                                     <div class="ps__rail-y" style="top: 0px; height: auto; right: 0px;">
-                                        <div class="ps__thumb-y" tabindex="0"
-                                            style="top: 0px; height: auto;"></div>
+                                        <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: auto;"></div>
                                     </div>
                                 </div>
                                 <div class="chat-footer d-flex"
@@ -199,7 +198,10 @@
                                     <form class="search-form flex-grow-1 me-2">
                                         <div class="input-group">
                                             <input type="text" class="form-control rounded-pill" id="chatForm"
-                                                placeholder="Type a message">
+                                                placeholder="Type a message" @error('message') is-invalid @enderror>
+                                            @error('message')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </form>
                                     <div>
@@ -244,6 +246,10 @@
                                 <div class="mb-3" style="display: flex">
                                     <label class="txt-11 fw-bolder text-capitalize">Report Type: </label>
                                     <p id="ticket_type" style="margin-left: 0.5em;" class="text-muted">Null</p>
+                                </div>
+                                <div class="mb-3" style="display: flex">
+                                    <label class="txt-11 fw-bolder text-capitalize">Description: </label>
+                                    <p id="ticket_description" style="margin-left: 0.5em;" class="text-muted">Null</p>
                                 </div>
                                 <div class="mb-3" style="display: flex">
                                     <label class="txt-11 fw-bolder text-capitalize">Order ID: </label>
@@ -302,6 +308,7 @@
             var name = document.getElementById("ticket_name");
             var email = document.getElementById("ticket_email");
             var title = document.getElementById("title-report");
+            var desc = document.getElementById("ticket_description");
             // var desc = document.getElementById("ticket-desc");
 
             $('.list-group-item').removeClass('active');
@@ -321,9 +328,10 @@
             created_at.textContent = item.created_at;
             updated_at.textContent = item.updated_at;
             type.textContent = item.report_type;
-            title.textContent = item.report_type;
+            title.textContent = item.subject;
             name.textContent = item.name;
             email.textContent = item.email;
+            desc.textContent = item.description;
             if (item.order_id != null) {
                 order_id.textContent = item.order_id;
             }
@@ -408,9 +416,6 @@
             var messageInput = document.getElementById('chatForm');
             var message = messageInput.value.trim();
 
-            console.log(ticketId);
-            console.log(message);
-
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -430,7 +435,7 @@
                     listItem.className = 'message-item ' + messageItemClass;
 
                     var avatarSrc = updatedReport.user_id == null ?
-                        '{{!empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg')}}' :
+                        '{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}' :
                         item.picasset == null ? avatar.src =
                         "{{ url('backend/assets/images/no_image.jpg') }}" : avatar
                         .src = item.picasset;

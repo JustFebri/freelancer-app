@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\SavedServiceController;
+use App\Http\Requests\API\FilterDataRequest;
+use App\Http\Requests\API\FilterSubCategoryRequest;
 use App\Models\custom_orders;
 use App\Models\order;
 use Illuminate\Support\Facades\Auth;
@@ -528,11 +530,10 @@ class ServiceController extends Controller
         return $angle * $earthRadius;
     }
 
-    public function filterData(Request $request)
+    public function filterData(FilterDataRequest $request)
     {
         $currentUserId = auth()->id();
         $keywords = explode(' ', $request->keyword);
-        Log::info($keywords);
 
         $suggestions = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
@@ -697,11 +698,11 @@ class ServiceController extends Controller
         ], 200);
     }
 
-    public function filterDataNotLogged(Request $request)
+    public function filterDataNotLogged(FilterDataRequest $request)
     {
         $currentUserId = auth()->id();
         $keywords = explode(' ', $request->keyword);
-        Log::info($keywords);
+        Log::info($request);
 
         // type: null, custom: true, lowRange: null, highRange: null, rating: null
 
@@ -716,7 +717,7 @@ class ServiceController extends Controller
                     $queryBuilder->where('s.title', 'LIKE', '%' . $keyword . '%');
                 }
             })
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location');
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 's.lat', 's.lng');
 
         if ($request->type != null) {
             $suggestions->where('s.type', $request->type);
@@ -764,6 +765,7 @@ class ServiceController extends Controller
             $suggestion->servicePic = $this->getAImage($suggestion->service_id);
 
             if ($request->lat != null && $request->lng != null) {
+                Log::info('calledlat');
                 $suggestion->distance = $this->haversineGreatCircleDistance(
                     $request->lat,
                     $request->lng,
@@ -858,29 +860,27 @@ class ServiceController extends Controller
         ], 200);
     }
 
-    public function filterSubCategory(Request $request)
+    public function filterSubCategory(FilterSubCategoryRequest $request)
     {
         $currentUserId = auth()->id();
-        $keywords = explode(' ', $request->keyword);
-        Log::info($keywords);
-
-        // type: null, custom: true, lowRange: null, highRange: null, rating: null
 
         $suggestions = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng')
             ->where('u.status', 'active')
             ->where('s.subcategory_id', '=', $request->subcategory_id)
             ->where('u.user_id', '!=', $currentUserId);
+
 
         if ($request->type != null) {
             $suggestions->where('s.type', $request->type);
         }
 
         $suggestions =  $suggestions->get();
+        Log::info($suggestions);
 
         $weights = [
             'rating' => 0.6,
@@ -1023,20 +1023,14 @@ class ServiceController extends Controller
         ], 200);
     }
 
-    public function filterSubCategoryNotLogged(Request $request)
+    public function filterSubCategoryNotLogged(FilterSubCategoryRequest $request)
     {
-        $currentUserId = auth()->id();
-        $keywords = explode(' ', $request->keyword);
-        Log::info($keywords);
-
-        // type: null, custom: true, lowRange: null, highRange: null, rating: null
-
         $suggestions = DB::table('service as s')
             ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng')
             ->where('u.status', 'active')
             ->where('s.subcategory_id', '=', $request->subcategory_id);
 
@@ -1165,9 +1159,15 @@ class ServiceController extends Controller
 
         Log::info($rankedSuggestions);
 
-        usort($rankedSuggestions, function ($a, $b) {
-            return $b['score'] <=> $a['score'];
-        });
+        if ($request->lat != null && $request->lng != null) {
+            usort($rankedSuggestions, function ($a, $b) {
+                return $a['distance'] <=> $b['distance'];
+            });
+        } else {
+            usort($rankedSuggestions, function ($a, $b) {
+                return $b['score'] <=> $a['score'];
+            });
+        }
 
         return response()->json([
             'suggestions' => $rankedSuggestions,

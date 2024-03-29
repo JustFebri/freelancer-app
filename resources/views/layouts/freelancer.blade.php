@@ -49,7 +49,7 @@
                                         <div class="mb-3">
                                             <label for="InputEmail" class="form-label">Email address</label>
                                             <input type="email" name="email" class="form-control" id="InputEmail"
-                                                placeholder="Email" @error('Email') is-invalid @enderror">
+                                                placeholder="Email" @error('Email') is-invalid @enderror>
                                             @error('email')
                                                 <span class="text-danger">{{ $message }}</span>
                                             @enderror
@@ -74,8 +74,8 @@
                                         </div>
                                         <div class="mb-3">
                                             <label for="InputInformation" class="form-label">Freelancer Information</label>
-                                            <textarea name="description" id="InputInformation" class="form-control" maxlength="200" rows="4"
-                                                placeholder="This textarea has a limit of 200 chars."></textarea>
+                                            <textarea name="description" id="InputInformation" class="form-control" maxlength="500" rows="4"
+                                                placeholder="This textarea has a limit of 500 chars."></textarea>
                                         </div>
                                         <div class="mb-3">
                                             <label for="InputStatus" class="form-label">Status</label>
@@ -88,7 +88,10 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="image">Profile Picture</label>
                                             <input class="form-control" accept="image/*" type="file" id="image"
-                                                name="photo">
+                                                name="photo" @error('photo') is-invalid @enderror>
+                                            @error('photo')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label" for="showImage"></label>
@@ -239,8 +242,12 @@
                                                                     <label
                                                                         for="InputInformation{{ $item->freelancer_id }}"
                                                                         class="form-label">Freelancer Information</label>
-                                                                    <textarea name="information" id="InputInformation{{ $item->freelancer_id }}" class="form-control" maxlength="200"
-                                                                        rows="4" placeholder="This textarea has a limit of 200 chars.">{{ $item->description }}</textarea>
+                                                                    <textarea name="description" id="description{{ $item->freelancer_id }}" class="form-control" maxlength="500"
+                                                                        rows="4" placeholder="This textarea has a limit of 500 chars."
+                                                                        @error('description') is-invalid @enderror>{{ $item->description }}</textarea>
+                                                                    @error('description')
+                                                                        <span class="text-danger">{{ $message }}</span>
+                                                                    @enderror
                                                                 </div>
                                                                 <div class="mb-3">
                                                                     <label for="InputStatus{{ $item->freelancer_id }}"

@@ -7,7 +7,11 @@ use App\Events\updateTicketChat;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\ChangeTypeController;
 use App\Http\Requests\API\IssueRequest;
+use App\Http\Requests\API\PasswordRequest;
+use App\Http\Requests\API\ProfilePicRequest;
+use App\Http\Requests\API\TicketMessageRequest;
 use App\Http\Requests\API\UpdateProfileRequest;
+use App\Http\Requests\API\WithdrawRequest;
 use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\user;
@@ -45,24 +49,22 @@ class ProfileController extends Controller
     {
         $currentUserId = auth()->id();
         $record = user::where('user_id', '=', $currentUserId)->first();
-        Log::info($record);
         if ($record->profile_type == 'freelancer') {
-            Log::info('1');
             return response([
                 'message' => 'User is freelancer',
+                'user' => $record,
             ], 201);
         } else {
-            Log::info('2');
             return response([
                 'message' => 'User is not freelancer',
-            ], 404); // Or any appropriate status code like 404 Not Found
+                'user' => $record,
+            ], 404);
         }
     }
 
     public function sendIssue(IssueRequest $request)
     {
 
-        $request->validated();
         $currentUserId = auth()->id();
 
         $reportData = [
@@ -106,9 +108,9 @@ class ProfileController extends Controller
         ], 200);
     }
 
-    public function getTicketMessage(Request $request)
+    public function getTicketMessage(string $report_id)
     {
-        $message = report_chats::where('report_id', $request->report_id)->get();
+        $message = report_chats::where('report_id', $report_id)->get();
 
         Log::info($message);
         return response()->json([
@@ -116,7 +118,7 @@ class ProfileController extends Controller
         ], 200);
     }
 
-    public function sendTicketMessage(Request $request)
+    public function sendTicketMessage(TicketMessageRequest $request)
     {
         $currentUserId = auth()->id();
         $message = new report_chats;
@@ -136,6 +138,19 @@ class ProfileController extends Controller
     public function changeUserData(Request $request)
     {
         $currentUserId = auth()->id();
+        $profileData = user::find($currentUserId);
+
+        if ($profileData->email != $request->email) {
+            $request->validate([
+                'email' => 'required|email|unique:user',
+                'name' => 'required|string|max:255',
+            ]);
+        } else {
+            $request->validate([
+                'name' => 'required|string|max:255',
+            ]);
+        }
+
         if ($currentUserId) {
             $user = user::find($currentUserId);
             $user->name = $request->name;
@@ -149,7 +164,7 @@ class ProfileController extends Controller
         }
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(PasswordRequest $request)
     {
         $currentUserId = auth()->id();
 
@@ -168,7 +183,7 @@ class ProfileController extends Controller
         ], 200);
     }
 
-    public function changeProfilePicture(Request $request)
+    public function changeProfilePicture(ProfilePicRequest $request)
     {
         $currentUserId = auth()->id();
         $user = user::find($currentUserId);
@@ -233,7 +248,15 @@ class ProfileController extends Controller
     public function getTransaction()
     {
         $currentUserId = auth()->id();
-        $data = transactions::where('user_id', $currentUserId)->orderBy('updated_at', 'desc')
+        $data = DB::table('transactions as t')
+            ->where('t.user_id', $currentUserId)
+            ->leftJoin('order as o', 'o.order_id', 't.order_id')
+            ->orderBy('t.updated_at', 'desc')
+            ->select('t.type', 't.amount')
+            ->where(function ($query) {
+                $query->where('t.type', 'balance_withdraw')
+                    ->orWhere('t.type', 'client_payment_balance');
+            })
             ->get();
 
         LOg::info($data);
@@ -243,7 +266,7 @@ class ProfileController extends Controller
         ], 200);
     }
 
-    public function withdrawBalance(Request $request)
+    public function withdrawBalance(WithdrawRequest $request)
     {
         $currentUserId = auth()->id();
         $user = user::find($currentUserId);

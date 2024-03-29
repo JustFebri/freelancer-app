@@ -17,12 +17,13 @@ class ReportController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'r.user_id')
             ->leftJoin('order as o', 'o.order_id', '=', 'r.order_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
-            ->select('r.report_id', 'r.order_id', 'r.report_type', 'r.user_id', 'r.description', 'r.status', 'r.created_at', 'r.updated_at', 'u.name', 'u.email', 'p.picasset')
+            ->select('r.report_id', 'r.order_id', 'r.report_type', 'r.user_id', 'r.description', 'r.status', 'r.created_at', 'r.updated_at', 'u.name', 'u.email', 'p.picasset', 'r.subject')
             ->latest()
             ->get();
 
         foreach ($type as $item) {
             $item->message = report_chats::where('report_id', $item->report_id)->get();
+            $item->lastMessage = report_chats::where('report_id', $item->report_id)->orderBy('created_at', 'desc')->pluck('message')->first();
         }
 
         return view('layouts.report', compact('type'));
@@ -30,7 +31,7 @@ class ReportController extends Controller
 
     public function sendMessage(Request $request)
     {
-        Log::info('send');
+        Log::info('called');
         $user_id = Auth::id();
 
         $data = new report_chats;
@@ -39,14 +40,13 @@ class ReportController extends Controller
         $data->report_id = $request->report_id;
         $data->save();
 
-        $updatedChat = report_chats::where('report_id', $request->report_id)->latest('created_at')->first();;
+        $updatedChat = report_chats::where('report_id', $request->report_id)->latest('created_at')->first();
 
         return response()->json(['Success' => 'Message Sent', 'updatedReport' => $updatedChat], 200);
     }
 
     public function changeReportStatus(Request $request)
     {
-        Log::info($request->all());
         $report = Report::find($request->report_id);
 
         if ($report) {

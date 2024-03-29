@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -41,6 +42,12 @@ class ProfileController extends Controller
         $id = Auth::user()->admin_id;
         $profileData = admin::find($id);
         $currentTimestamp = Carbon::now();
+
+        if ($profileData->email != $request->email) {
+            $request->validate([
+                'email' => 'required|email|unique:admin',
+            ]);
+        }
 
         if ($request->file('photo')) {
             if (!empty($profileData->picture_id)) {
@@ -101,7 +108,7 @@ class ProfileController extends Controller
         }
     }
 
-    function changePassword(Request $request)
+    function changePassword()
     {
         $id = Auth::user()->admin_id;
         $profileData = admin::find($id);
@@ -111,6 +118,7 @@ class ProfileController extends Controller
             $profileData = admin::join('picture', 'admin.picture_id', '=', 'picture.picture_id')
                 ->select('picture.picasset', 'admin.name', 'admin.email', 'admin.created_at', 'admin.updated_at')
                 ->find($id);
+            Log::info($profileData);
             return view('admin.change_password', compact('profileData'));
         };
     }
@@ -119,9 +127,11 @@ class ProfileController extends Controller
     {
 
         // Validation
+
         $request->validate([
             'old_password' => 'required',
-            'new_password' => 'required|confirmed|min:8'
+            'new_password' => 'required|confirmed|min:8',
+            'new_password_confirmation' => 'required', 
         ]);
 
         // Match The Old Password

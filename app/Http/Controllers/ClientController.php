@@ -25,7 +25,7 @@ class ClientController extends Controller
         return view('layouts.client', compact('db_client'));
     }
 
-    public function clientStore(request $request)
+    public function clientStore(Request $request)
     {
         $currentTimestamp = Carbon::now();
 
@@ -33,6 +33,8 @@ class ClientController extends Controller
             'name' => 'required|string|max:200',
             'email' => 'required|email|unique:user',
             'password' => 'required|min:8',
+            'status' => 'required|in:active,suspended',
+            'photo' => 'image|mimes:jpeg,png,jpg,gif,webp',
         ]);
 
         if ($request->file('photo')) {
@@ -55,7 +57,7 @@ class ClientController extends Controller
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
-                'email_verified_at' => null,
+                'email_verified_at' => Carbon::now(),
                 'remember_token' => null,
                 'profile_type' => 'client',
                 'last_login' => null,
@@ -148,12 +150,16 @@ class ClientController extends Controller
 
         if ($profileData->email == $request->email) {
             $request->validate([
-                'name' => 'required|max:200',
+                'name' => 'required|string|max:200',
+                'status' => 'required|in:active,suspended',
+                'photo' => 'image|mimes:jpeg,png,jpg,gif,webp',
             ]);
         } else {
             $request->validate([
-                'name' => 'required|max:200',
-                'email' => 'required|unique:user',
+                'name' => 'required|string|max:200',
+                'email' => 'required|email|unique:user',
+                'status' => 'required|in:active,suspended',
+                'photo' => 'image|mimes:jpeg,png,jpg,gif,webp',
             ]);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\client;
 use App\Models\freelancer;
 use App\Models\order;
 use App\Models\payment;
@@ -15,6 +16,7 @@ class OrderController extends Controller
     public function order()
     {
         $type = order::latest()->get();
+
         foreach($type as $item){
             if($item->custom_id == null){
                 $package = service_package::find($item->package_id);
@@ -23,9 +25,12 @@ class OrderController extends Controller
                 $custom = service_package::find($item->custom_id);
                 $item->service_id = $custom->service_id;
             }
-            $userClient = user::find($item->client_id);
-            $userFreelancer = freelancer::find($item->client_id);
-            $userFreelancer = user::find($userFreelancer->user_id);
+
+            $tempClient = client::find($item->client_id);
+            $userClient = user::find($tempClient->user_id);
+
+            $tempFreelancer = freelancer::find($item->freelancer_id);
+            $userFreelancer = user::find($tempFreelancer->user_id);
 
             $item->buyer = $userClient->name;
             $item->seller = $userFreelancer->name;

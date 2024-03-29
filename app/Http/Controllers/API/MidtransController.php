@@ -8,6 +8,10 @@ use App\Events\UpdateMessage;
 use App\Events\UpdateOrder;
 use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\BalancePayment;
+use App\Http\Requests\API\MidtransCustomPayment;
+use App\Http\Requests\API\MidtransPayment;
+use App\Mail\NewOrder;
 use App\Models\ChatMessage;
 use App\Models\client;
 use App\Models\custom_orders;
@@ -23,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
@@ -31,7 +36,7 @@ use Xendit\PaymentRequest\PaymentRequestApi;
 
 class MidtransController extends Controller
 {
-    public function create(Request $request)
+    public function create(MidtransPayment $request)
     {
         \Midtrans\Config::$serverKey = 'SB-Mid-server-ozqQ40fCNDbY9RqlElgxFL1V';
         // Set to Development/Sandbox Environment (default). Set to true for Production Environment (accept real transaction).
@@ -46,6 +51,8 @@ class MidtransController extends Controller
         $oderId = (string) Str::uuid();
 
         $freelancer = freelancer::where('user_id', '=', $request->seller_id)->first();
+
+        Log::info($request);
 
         $order = new order;
         $order->order_id = $oderId;
@@ -64,6 +71,7 @@ class MidtransController extends Controller
             $order->lat = $request->lat;
             $order->lng = $request->lng;
         }
+        Log::info($order);
         $order->save();
 
 
@@ -103,7 +111,7 @@ class MidtransController extends Controller
         ], 200);
     }
 
-    public function createCustom(Request $request)
+    public function createCustom(MidtransCustomPayment $request)
     {
         \Midtrans\Config::$serverKey = 'SB-Mid-server-ozqQ40fCNDbY9RqlElgxFL1V';
         // Set to Development/Sandbox Environment (default). Set to true for Production Environment (accept real transaction).
@@ -228,6 +236,18 @@ class MidtransController extends Controller
                     $transaction->type = 'client_payment';
                     $transaction->description = 'payment for order ' . $order->order_id;
                     $transaction->save();
+
+                    $tempFreelancer = freelancer::find($order->freelancer_id);
+                    $tempUser = user::find($tempFreelancer->user_id);
+                    $tempClient = user::find($order->client_id);
+
+                    Mail::to($tempUser->email)->send(
+                        new NewOrder(
+                            $request->order_id,
+                            $tempClient->name,
+                            $tempUser->name,
+                        )
+                    );
                     break;
 
                 case 'pending':
@@ -345,7 +365,7 @@ class MidtransController extends Controller
     }
 
 
-    public function paymethodBalance(Request $request)
+    public function paymethodBalance(BalancePayment $request)
     {
         Log::info('payment is settled using balance');
         $oderId = (string) Str::uuid();
@@ -404,7 +424,7 @@ class MidtransController extends Controller
         $transaction->order_id = $oderId;
         $transaction->user_id = $authenticatedUserId;
         $transaction->amount = $request->price;
-        $transaction->type = 'client_payment';
+        $transaction->type = 'client_payment_balance';
         $transaction->description = 'payment for order ' . $oderId;
         $transaction->save();
 
@@ -416,6 +436,18 @@ class MidtransController extends Controller
 
         $freelancer = freelancer::find($order->freelancer_id);
         broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
+
+        $tempFreelancer = freelancer::find($request->freelancer_id);
+        $tempUser = user::find($tempFreelancer->user_id);
+        $tempClient = user::find($authenticatedUserId);
+
+        Mail::to($tempUser->email)->send(
+            new NewOrder(
+                $request->order_id,
+                $tempClient->name,
+                $tempUser->name,
+            )
+        );
 
         return response([
             'message' => 'Payment Successful',

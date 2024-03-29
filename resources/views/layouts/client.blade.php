@@ -92,7 +92,7 @@
                             <table id="dataTableExample" class="table">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>Client ID</th>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Order Made</th>

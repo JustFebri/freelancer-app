@@ -57,10 +57,13 @@ class FreelancerController extends Controller
         $description = $request->description ?? '';
 
         $request->validate([
-            'name' => 'required|max:200|string',
-            'email' => 'required|unique:user|email',
+            'name' => 'required|string|max:200',
+            'email' => 'required|email|unique:user',
             'password' => 'required|min:8',
-            'identity_number' => 'required|min:16|unique:freelancer'
+            'identity_number' => 'required|numeric|digits:16|unique:freelancer',
+            'description' => 'required|string|min:150',
+            'status' => 'required|in:active,suspended',
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif,webp',
         ]);
 
         if ($request->file('photo')) {
@@ -82,7 +85,7 @@ class FreelancerController extends Controller
                 'status' => $request->status,
                 'created_at' => $currentTimestamp,
                 'updated_at' => $currentTimestamp,
-                'email_verified_at' => null,
+                'email_verified_at' => Carbon::now(),
                 'remember_token' => null,
                 'profile_type' => 'freelancer',
                 'last_login' => null,
@@ -190,27 +193,40 @@ class FreelancerController extends Controller
         $profileData = user::find($id);
         $freelancerData = DB::table('freelancer')->where('user_id', $id)->first();
         $currentTimestamp = Carbon::now();
-        $desc = $request->information ?? '';
+        $desc = $request->description ?? '';
 
-        if ($profileData->email == $request->email && $freelancerData->identity_number == $request->identity_number) {
+        Log::info($request);
+
+        if (
+            $profileData->email == $request->email &&
+            $freelancerData->identity_number == $request->identity_number
+        ) {
             $request->validate([
-                'name' => 'required|max:200',
+                'name' => 'required|string|max:200',
+                'description' => 'required|string|min:150',
+                'status' => 'required|in:active,suspended',
             ]);
         } else if ($profileData->email == $request->email) {
             $request->validate([
-                'name' => 'required|max:200',
-                'identity_number' => 'required|unique:freelancer'
+                'name' => 'required|string|max:200',
+                'identity_number' => 'required|numeric|digits:16|unique:freelancer',
+                'description' => 'required|string|min:150',
+                'status' => 'required|in:active,suspended',
             ]);
         } else if ($freelancerData->identity_number == $request->identity_number) {
             $request->validate([
-                'name' => 'required|max:200',
-                'email' => 'required|unique:user',
+                'name' => 'required|string|max:200',
+                'email' => 'required|email|unique:user',
+                'description' => 'required|string|min:150',
+                'status' => 'required|in:active,suspended',
             ]);
         } else {
             $request->validate([
-                'name' => 'required|max:200',
-                'email' => 'required|unique:user',
-                'identity_number' => 'required|unique:freelancer'
+                'name' => 'required|string|max:200',
+                'email' => 'required|email|unique:user',
+                'identity_number' => 'required|numeric|digits:16|unique:freelancer',
+                'description' => 'required|string|min:150',
+                'status' => 'required|in:active,suspended',
             ]);
         }
 
@@ -414,8 +430,7 @@ class FreelancerController extends Controller
                 'alert-type' => 'error'
             );
         } else {
-            $freelancer->IsApproved = 'rejected';
-            $freelancer->save();
+            $freelancer->delete();
             Mail::to($user->email)->send(new RejectEmail($user->name));
             $notification = array(
                 'message' => 'Request Rejected Successfully',

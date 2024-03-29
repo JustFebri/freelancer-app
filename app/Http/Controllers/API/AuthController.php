@@ -16,18 +16,20 @@ use App\Models\forgot_password;
 use App\Models\freelancer;
 use App\Models\picture;
 use App\Models\user;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
     use ThrottlesAttempts;
     public function register(RegisterRequest $request)
     {
-        $request->validated();
         $currentTimestamp = Carbon::now();
 
         $userData = [
@@ -44,23 +46,24 @@ class AuthController extends Controller
 
         $user = user::create($userData);
 
-        $token = $user->createToken('authToken')->plainTextToken;
-
         client::create([
             'user_id' => $user->user_id,
             'orders_made' => 0,
             'total_spent' => 0,
         ]);
 
+        // $token = $user->createToken('authToken')->plainTextToken;
+
+        $user->sendEmailVerificationNotification();
+
         return response([
             'user' => $user,
-            'token' => $token
+            'message' => 'User Registered. Please check your email to activate your account',
+            // 'token' => $token
         ], 201);
     }
     public function login(LoginRequest $request)
     {
-        $request->validated();
-
         if ($this->hasTooManyAttempts($request)) {
             return $this->sendLockoutResponse($request);
         }
@@ -71,6 +74,12 @@ class AuthController extends Controller
             return response([
                 'message' => 'Invalid Credentials',
             ], 422);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return response([
+                'message' => 'Your email address is not verified. Please verify your email to proceed.'
+            ], 403);
         }
 
         $this->clearAttempts($request);
@@ -105,6 +114,12 @@ class AuthController extends Controller
             return response([
                 'message' => 'Incorret email address provided',
             ], 404);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return response([
+                'message' => 'Your email address is not verified. Please verify your email to proceed.'
+            ], 403);
         }
 
         $resetPassword = str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
@@ -173,6 +188,43 @@ class AuthController extends Controller
             'token' => $token,
             'message' => 'Password Reset Sucess',
         ], 200);
+    }
+
+    public function verify($id, Request $request)
+    {
+        if (!$request->hasValidSignature()) {
+            return response([
+                'status' => false,
+                'message' => 'Verifying email fails',
+            ], 400);
+        }
+
+        $user = user::find($id);
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        return view('layouts.verification');
+    }
+
+    public function notice()
+    {
+        return response([
+            'status' => false,
+            'message' => 'Your email address is not verified. Please verify your email to proceed.',
+        ], 400);
+    }
+
+    public function resend($email)
+    {
+        $user = user::where('email', $email)->first();
+        if ($user) {
+            $user->sendEmailVerificationNotification();
+            return response()->json([
+                'status' => true,
+                'message' => 'Please check your email to activate your account',
+            ]);
+        }
     }
 }
 

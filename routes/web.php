@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\HelloEvent;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\FreelancerController;
 use App\Http\Controllers\OrderController;
@@ -29,9 +30,9 @@ Route::get('/send-event', function () {
     broadcast(new \App\Events\HelloEvent());
 });
 
-Route::get('/dashboard', function () {
-    return view('admin.index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [AdminController::class, 'dashboard'])
+    ->middleware(['auth'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'profile'])->name('profile');

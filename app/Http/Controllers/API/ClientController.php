@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Events\UpdateOrder;
 use App\Events\UpdateOrderFreelancer;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\RevisionRequest;
 use App\Mail\ClientAcceptDelivery;
 use App\Mail\ClientRequestRevision;
 use App\Models\delivery;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\API\SavedServiceController;
+use App\Http\Requests\API\ReviewRequest;
 use App\Mail\FreelancerAcceptRevisionRequest;
 use App\Mail\FreelancerDeclineRevisionRequest;
 use App\Models\client;
@@ -260,7 +262,7 @@ class ClientController extends Controller
         ], 200);
     }
 
-    public function sendReview(Request $request)
+    public function sendReview(ReviewRequest $request)
     {
         $authenticatedUserId = auth()->id();
 
@@ -313,7 +315,7 @@ class ClientController extends Controller
         ], 200);
     }
 
-    public function requestRevision(Request $request)
+    public function requestRevision(RevisionRequest $request)
     {
         $revision = new revision;
         $revision->order_id = $request->order_id;

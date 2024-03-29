@@ -11,11 +11,8 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
 
                             <div>
-                                {{-- <img class="wd-100 rounded-circle border border-dark"
-                                    src="{{ !empty($profileData->file) ? url('upload/profile_images/' . $profileData->profile_images) : url('backend/assets/images/no_image.jpg') }}"
-                                    alt="profile"> --}}
                                 <img class="wd-100 ht-100 rounded-circle border border-dark"
-                                    src="{{ !empty($profileData->file) ? 'data:' . $profileData->filetype . ';base64,' . base64_encode($profileData->file) : url('backend/assets/images/no_image.jpg') }}"
+                                    src="{{ !empty($profileData->picasset) ? asset($profileData->picasset) : url('backend/assets/images/no_image.jpg') }}"
                                     alt="profile" style="object-fit: cover;">
                                 <span class="h4 ms-3 text-dark">{{ $profileData->name }}</span>
                             </div>
@@ -37,17 +34,6 @@
                         <div class="mt-3">
                             <label class="tx-11 fw-bolder mb-0 text-uppercase">updated at</label>
                             <p class="text-muted">{{ $profileData->updated_at }}</p>
-                        </div>
-                        <div class="mt-3 d-flex social-links">
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="github"></i>
-                            </a>
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="twitter"></i>
-                            </a>
-                            <a href="javascript:;" class="btn btn-icon border btn-xs me-2">
-                                <i data-feather="instagram"></i>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -85,10 +71,12 @@
                                 <div class="mb-3">
                                     <label for="new_password_confirmation" class="form-label">Confirm New Password</label>
                                     <input name="new_password_confirmation" type="password"
-                                        class="form-control" id="new_password_confirmation"
+                                        class="form-control @error('new_password_confirmation') is-invalid @enderror" id="new_password_confirmation"
                                         autocomplete="off">
+                                    @error('new_password_confirmation')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
                                     </div>
-
                                 <button type="submit" class="btn btn-primary me-2">Save Changes</button>
                             </form>
 

@@ -62,7 +62,11 @@
                                 <div class="mb-3">
                                     <label for="exampleInputEmail1" class="form-label">Email address</label>
                                     <input name="email" type="email" class="form-control" id="exampleInputEmail1"
-                                        placeholder="Email" value="{{ $profileData->email }}">
+                                        placeholder="Email" value="{{ $profileData->email }}"
+                                        @error('Email') is-invalid @enderror>
+                                    @error('email')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" for="formFile">File upload</label>
