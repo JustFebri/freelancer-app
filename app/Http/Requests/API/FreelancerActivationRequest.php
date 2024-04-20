@@ -3,6 +3,7 @@
 namespace App\Http\Requests\API;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class FreelancerActivationRequest extends FormRequest
 {
@@ -22,16 +23,24 @@ class FreelancerActivationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'idCardImage' => 'required|image|mimes:jpeg,png,jpg,gif,webp',
-            'idCardWithSefieImage' => 'required|image|mimes:jpeg,png,jpg,gif,webp',
+            'idCardImage' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+            'idCardWithSefieImage' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
             'profileImage' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
             'name' => 'required|string|max:200',
-            'niknumber' => 'required|numeric|digits:16|unique:freelancer,identity_number',
+
+            'niknumber' => [
+                'required',
+                'numeric',
+                'digits:16',
+                Rule::unique('freelancer', 'identity_number')->where(function ($query) {
+                    $query->where('isApproved', '!=', 'rejected');
+                }),
+            ],
             'nikname' => 'required|string|max:200',
             'nikgender' => 'required|string|max:200',
             'nikaddress' => 'required|string|max:200',
             'description' => 'required|string|max:500',
-            'url' => 'nullable|url',
+            'url' => 'nullable|string',
             'languages' => 'required|string',
             'occupations' => 'required|string',
             'skills' => 'required|string|max:500',

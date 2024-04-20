@@ -180,6 +180,11 @@ class ClientController extends Controller
                 ->where('pi.portfolio_id', '=', $item->portfolio_id)
                 ->get();
         }
+
+        $freelancerPersonalUrl = DB::table('personal_url as pu')
+            ->where('pu.freelancer_id', '=', $freelancer_id)
+            ->get();
+
         Log::info($reviews);
         return response()->json([
             'data' => $data,
@@ -188,6 +193,7 @@ class ClientController extends Controller
             'services' => $services,
             'portfolio' => $portfolio,
             'reviews' => $reviews,
+            'personalUrl' => $freelancerPersonalUrl,
         ], 200);
     }
 

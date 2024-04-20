@@ -59,15 +59,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/freelancer/request', 'freelancerRequest')->name('freelancer.request');
         Route::get('/freelancer/request/{freelancer_id}', 'freelancerRequestDetails')->name('freelancer.request.details');
         Route::post('/freelancer/request/{user_id}/approve/{freelancer_id}', 'requestApprove')->name('freelancer.request.approve');
-        Route::post('/freelancer/request/{user_id}/reject/{freelancer_id}', 'requestReject')->name('freelancer.request.reject');
+        Route::post('/freelancer/request/reject', 'requestReject')->name('freelancer.request.reject');
     });
 
     Route::controller(ServiceController::class)->group(function () {
         Route::get('/service', 'service')->name('service');
         Route::get('/service/request', 'serviceRequest')->name('service.request');
         Route::get('/service/request/{service_id}', 'serviceRequestDetails')->name('service.request.details');
+        Route::get('/service/{service_id}', 'serviceDetails')->name('service.details');
         Route::post('/service/request/approve/{service_id}', 'requestApprove')->name('service.request.approve');
-        Route::post('/service/request/reject/{service_id}', 'requestReject')->name('service.request.reject');
+        Route::post('/service/request/reject', 'requestReject')->name('service.request.reject');
     });
 
     Route::controller(OrderController::class)->group(function () {

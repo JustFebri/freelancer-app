@@ -29,13 +29,31 @@ class ServiceController extends Controller
         $record = freelancer::where('user_id', '=', $currentUserId)->first();
 
         $data = DB::table('service as s')
+            ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
+            ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
+            ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->leftJoin('category as c', 'c.category_id', '=', 'sc.category_id')
             ->where('s.freelancer_id', '=', $record->freelancer_id)
+            ->where(function ($query) {
+                $query->where('s.status', '!=', 'archived')
+                    ->orWhereNull('s.status'); // Include records where IsApproved is NULL
+            })
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.custom_order', 's.type', 's.location', 's.IsApproved')
             ->get();
 
         foreach ($data as $item) {
             $item->servicePic = $this->getAImage($item->service_id);
+
+            $var = $this->getRating($item->service_id);
+            $item->count = $var['count'];
+            $item->rating = number_format($var['rating'], 1);
+            $item->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($item->service_id);
+            if ($item->user_id == $currentUserId) {
+                $item->isSeller = true;
+            } else {
+                $item->isSeller = false;
+            }
         }
 
         return response()->json([
@@ -123,6 +141,8 @@ class ServiceController extends Controller
     {
         $data = DB::table('service_package as sp')
             ->where('sp.service_id', '=', $service_id)
+            ->orderBy('price')
+            ->where('sp.package_status', 'active')
             ->get();
 
         return response()->json([
@@ -141,8 +161,7 @@ class ServiceController extends Controller
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->select('u.user_id', 'u.name', 's.service_id', 'p.picasset', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.custom_order', 's.type', 's.location')
             ->where('u.status', 'active')
-            ->where('u.user_id', '!=', $authenticatedUserId)
-            ->where('s.isApproved', '!=', 'pending')
+            ->where('s.status', 'active')
             ->get();
 
         foreach ($service as $item) {
@@ -153,6 +172,11 @@ class ServiceController extends Controller
 
             $item->servicePic = $this->getAImage($item->service_id);
             $item->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($item->service_id);
+            if ($item->user_id == $authenticatedUserId) {
+                $item->isSeller = true;
+            } else {
+                $item->isSeller = false;
+            }
         }
 
         return response()->json([
@@ -169,21 +193,25 @@ class ServiceController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 'f.freelancer_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where('s.subcategory_id', '=', $subcategory_id)
-            ->where('u.user_id', '!=', $authenticatedUserId)
             ->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($service as $item) {
-            $item->rating = review::where('service_id', '=', $item->service_id)
+            $item->ratingBarang = review::where('service_id', '=', $item->service_id)
+                ->avg('rating');
+            $item->ratingFreelancer = review::where('client_id', '=', $item->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -198,10 +226,19 @@ class ServiceController extends Controller
                 ->where('o.order_status', 'completed')
                 ->count();
 
-            $item->complete_order = $countPackage + $countCustom;
+            Log::info($item->service_id . ' ' . $countPackage . ' ' . $countCustom);
+
+            $item->totalBarang = $countPackage + $countCustom;
+            $item->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $item->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
+
             $score = 0;
-            $score = $item->rating * $weights['rating'] +
-                $item->complete_order * $weights['complete_order'];
+            Log::info($item->ratingBarang * $weights['ratingBarang']);
+            Log::info($item->totalBarang * $weights['totalBarang']);
+            Log::info($item->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($item->totalOrder * $weights['totalOrder']);
 
             $item->lowestPrice = $this->getLowestPrice($item->service_id);
             $var = $this->getRating($item->service_id);
@@ -209,6 +246,12 @@ class ServiceController extends Controller
             $item->rating = number_format($var['rating'], 1);
             $item->servicePic = $this->getAImage($item->service_id);
             $item->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($item->service_id);
+
+            if ($item->user_id == $authenticatedUserId) {
+                $item->isSeller = true;
+            } else {
+                $item->isSeller = false;
+            }
 
             $rankedSuggestions[] = [
                 'title' => $item->title,
@@ -225,11 +268,12 @@ class ServiceController extends Controller
                 'email' => $item->email,
                 'user_id' => $item->user_id,
                 'piclink' => $item->piclink,
-                'complete' => $item->complete_order,
+                'complete' => $item->totalBarang,
                 'subcategory_name' => $item->subcategory_name,
                 'location' => $item->location,
                 'custom_order' => $item->custom_order,
                 'type' => $item->type,
+                'isSeller' => $item->isSeller,
             ];
         }
 
@@ -251,20 +295,25 @@ class ServiceController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 'f.freelancer_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where('s.subcategory_id', '=', $subcategory_id)
             ->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($service as $item) {
-            $item->rating = review::where('service_id', '=', $item->service_id)
+            $item->ratingBarang = review::where('service_id', '=', $item->service_id)
+                ->avg('rating');
+            $item->ratingFreelancer = review::where('client_id', '=', $item->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -279,11 +328,24 @@ class ServiceController extends Controller
                 ->where('o.order_status', 'completed')
                 ->count();
 
-            $item->complete_order = $countPackage + $countCustom;
+            Log::info($item->service_id . ' ' . $countPackage . ' ' . $countCustom);
+
+            $item->totalBarang = $countPackage + $countCustom;
+            $item->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $item->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            $score = $item->rating * $weights['rating'] +
-                $item->complete_order * $weights['complete_order'];
+            Log::info($item->ratingBarang * $weights['ratingBarang']);
+            Log::info($item->totalBarang * $weights['totalBarang']);
+            Log::info($item->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($item->totalOrder * $weights['totalOrder']);
+
+            $score = $item->ratingBarang * $weights['ratingBarang'] +
+                $item->ratingFreelancer * $weights['ratingPenjual'] +
+                $item->totalBarang * $weights['totalBarang'] +
+                $item->totalOrder * $weights['totalOrder'];
 
             $item->lowestPrice = $this->getLowestPrice($item->service_id);
             $var = $this->getRating($item->service_id);
@@ -306,11 +368,12 @@ class ServiceController extends Controller
                 'email' => $item->email,
                 'user_id' => $item->user_id,
                 'piclink' => $item->piclink,
-                'complete' => $item->complete_order,
+                'complete' => $item->totalBarang,
                 'subcategory_name' => $item->subcategory_name,
                 'location' => $item->location,
                 'custom_order' => $item->custom_order,
                 'type' => $item->type,
+                'isSeller' => false,
             ];
         }
 
@@ -335,24 +398,28 @@ class ServiceController extends Controller
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where(function ($queryBuilder) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $queryBuilder->where('s.title', 'LIKE', '%' . $keyword . '%');
                 }
             })
-            ->where('u.user_id', '!=', $currentUserId)
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 'f.freelancer_id')
             ->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -369,13 +436,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -383,6 +459,12 @@ class ServiceController extends Controller
             $suggestion->rating = number_format($var['rating'], 1);
             $suggestion->servicePic = $this->getAImage($suggestion->service_id);
             $suggestion->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($suggestion->service_id);
+
+            if ($suggestion->user_id == $currentUserId) {
+                $suggestion->isSeller = true;
+            } else {
+                $suggestion->isSeller = false;
+            }
 
             $rankedSuggestions[] = [
                 'title' => $suggestion->title,
@@ -399,11 +481,12 @@ class ServiceController extends Controller
                 'email' => $suggestion->email,
                 'user_id' => $suggestion->user_id,
                 'piclink' => $suggestion->piclink,
-                'complete' => $suggestion->complete_order,
+                'complete' => $suggestion->totalBarang,
                 'subcategory_name' => $suggestion->subcategory_name,
                 'location' => $suggestion->location,
                 'custom_order' => $suggestion->custom_order,
                 'type' => $suggestion->type,
+                'isSeller' => $suggestion->isSeller,
             ];
         }
 
@@ -429,23 +512,28 @@ class ServiceController extends Controller
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where(function ($queryBuilder) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $queryBuilder->where('s.title', 'LIKE', '%' . $keyword . '%');
                 }
             })
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 'f.freelancer_id')
             ->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -462,13 +550,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -490,11 +587,12 @@ class ServiceController extends Controller
                 'email' => $suggestion->email,
                 'user_id' => $suggestion->user_id,
                 'piclink' => $suggestion->piclink,
-                'complete' => $suggestion->complete_order,
+                'complete' => $suggestion->totalBarang,
                 'subcategory_name' => $suggestion->subcategory_name,
                 'location' => $suggestion->location,
                 'custom_order' => $suggestion->custom_order,
                 'type' => $suggestion->type,
+                'isSeller' => false,
             ];
         }
 
@@ -541,13 +639,13 @@ class ServiceController extends Controller
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where(function ($queryBuilder) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $queryBuilder->where('s.title', 'LIKE', '%' . $keyword . '%');
                 }
             })
-            ->where('u.user_id', '!=', $currentUserId)
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 's.lat', 's.lng');
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 's.lat', 's.lng', 'f.freelancer_id');
 
         if ($request->type != null) {
             $suggestions->where('s.type', $request->type);
@@ -556,8 +654,10 @@ class ServiceController extends Controller
         $suggestions =  $suggestions->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
@@ -566,7 +666,9 @@ class ServiceController extends Controller
         Log::info($request->lng);
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -583,13 +685,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -598,6 +709,11 @@ class ServiceController extends Controller
             $suggestion->servicePic = $this->getAImage($suggestion->service_id);
             $suggestion->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($suggestion->service_id);
 
+            if ($suggestion->user_id == $currentUserId) {
+                $suggestion->isSeller = true;
+            } else {
+                $suggestion->isSeller = false;
+            }
 
             if ($request->lat != null && $request->lng != null) {
                 $suggestion->distance = $this->haversineGreatCircleDistance(
@@ -622,12 +738,13 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
                     'distance' => $suggestion->distance,
+                    'isSeller' => $suggestion->isSeller,
                 ];
             } else {
                 $rankedSuggestions[] = [
@@ -645,11 +762,12 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
+                    'isSeller' => $suggestion->isSeller,
                 ];
             }
         }
@@ -712,12 +830,13 @@ class ServiceController extends Controller
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where(function ($queryBuilder) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $queryBuilder->where('s.title', 'LIKE', '%' . $keyword . '%');
                 }
             })
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 's.lat', 's.lng');
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 's.custom_order', 'sc.subcategory_name', 's.type', 's.location', 's.lat', 's.lng', 'f.freelancer_id');
 
         if ($request->type != null) {
             $suggestions->where('s.type', $request->type);
@@ -726,14 +845,18 @@ class ServiceController extends Controller
         $suggestions =  $suggestions->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -750,13 +873,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -787,12 +919,13 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
                     'distance' => $suggestion->distance,
+                    'isSeller' => false,
                 ];
             } else {
                 $rankedSuggestions[] = [
@@ -809,11 +942,12 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
+                    'isSeller' => false,
                 ];
             }
         }
@@ -869,10 +1003,10 @@ class ServiceController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng', 'f.freelancer_id')
             ->where('u.status', 'active')
-            ->where('s.subcategory_id', '=', $request->subcategory_id)
-            ->where('u.user_id', '!=', $currentUserId);
+            ->where('s.status', 'active')
+            ->where('s.subcategory_id', '=', $request->subcategory_id);
 
 
         if ($request->type != null) {
@@ -883,14 +1017,18 @@ class ServiceController extends Controller
         Log::info($suggestions);
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -907,13 +1045,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -921,6 +1068,12 @@ class ServiceController extends Controller
             $suggestion->rating = number_format($var['rating'], 1);
             $suggestion->servicePic = $this->getAImage($suggestion->service_id);
             $suggestion->serviceFav = app('App\Http\Controllers\API\SavedServiceController')->show($suggestion->service_id);
+
+            if ($suggestion->user_id == $currentUserId) {
+                $suggestion->isSeller = true;
+            } else {
+                $suggestion->isSeller = false;
+            }
 
             if ($request->lat != null && $request->lng != null) {
                 $suggestion->distance = $this->haversineGreatCircleDistance(
@@ -945,12 +1098,13 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
                     'distance' => $suggestion->distance,
+                    'isSeller' => $suggestion->isSeller,
                 ];
             } else {
                 $rankedSuggestions[] = [
@@ -968,11 +1122,12 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
+                    'isSeller' => $suggestion->isSeller,
                 ];
             }
         }
@@ -1030,8 +1185,9 @@ class ServiceController extends Controller
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
-            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng')
+            ->select('u.user_id', 'u.name', 's.service_id', 'p.piclink', 's.title', 's.description', 'u.email', 'sc.subcategory_name', 's.type', 's.location', 's.custom_order', 's.lat', 's.lng', 'f.freelancer_id')
             ->where('u.status', 'active')
+            ->where('s.status', 'active')
             ->where('s.subcategory_id', '=', $request->subcategory_id);
 
         if ($request->type != null) {
@@ -1041,14 +1197,18 @@ class ServiceController extends Controller
         $suggestions =  $suggestions->get();
 
         $weights = [
-            'rating' => 0.6,
-            'complete_order' => 0.4,
+            'ratingBarang' => 0.256,
+            'ratingPenjual' => 0.258,
+            'totalBarang' => 0.238,
+            'totalOrder' => 0.248,
         ];
 
         $rankedSuggestions = [];
 
         foreach ($suggestions as $suggestion) {
-            $suggestion->rating = review::where('service_id', '=', $suggestion->service_id)
+            $suggestion->ratingBarang = review::where('service_id', '=', $suggestion->service_id)
+                ->avg('rating');
+            $suggestion->ratingFreelancer = review::where('client_id', '=', $suggestion->user_id)
                 ->avg('rating');
 
             $countPackage = DB::table('order as o')
@@ -1065,13 +1225,22 @@ class ServiceController extends Controller
 
             Log::info($suggestion->service_id . ' ' . $countPackage . ' ' . $countCustom);
 
-            $suggestion->complete_order = $countPackage + $countCustom;
+            $suggestion->totalBarang = $countPackage + $countCustom;
+            $suggestion->totalOrder = DB::table('order as o')
+                ->where('freelancer_id', $suggestion->freelancer_id)
+                ->where('o.order_status', 'completed')
+                ->count();
 
             $score = 0;
-            Log::info($suggestion->rating * $weights['rating']);
-            Log::info($suggestion->complete_order * $weights['complete_order']);
-            $score = $suggestion->rating * $weights['rating'] +
-                $suggestion->complete_order * $weights['complete_order'];
+            Log::info($suggestion->ratingBarang * $weights['ratingBarang']);
+            Log::info($suggestion->totalBarang * $weights['totalBarang']);
+            Log::info($suggestion->ratingFreelancer * $weights['ratingPenjual']);
+            Log::info($suggestion->totalOrder * $weights['totalOrder']);
+
+            $score = $suggestion->ratingBarang * $weights['ratingBarang'] +
+                $suggestion->ratingFreelancer * $weights['ratingPenjual'] +
+                $suggestion->totalBarang * $weights['totalBarang'] +
+                $suggestion->totalOrder * $weights['totalOrder'];
 
             $suggestion->lowestPrice = $this->getLowestPrice($suggestion->service_id);
             $var = $this->getRating($suggestion->service_id);
@@ -1101,12 +1270,13 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
                     'distance' => $suggestion->distance,
+                    'isSeller' => false,
                 ];
             } else {
                 $rankedSuggestions[] = [
@@ -1123,11 +1293,12 @@ class ServiceController extends Controller
                     'email' => $suggestion->email,
                     'user_id' => $suggestion->user_id,
                     'piclink' => $suggestion->piclink,
-                    'complete' => $suggestion->complete_order,
+                    'complete' => $suggestion->totalBarang,
                     'subcategory_name' => $suggestion->subcategory_name,
                     'location' => $suggestion->location,
                     'custom_order' => $suggestion->custom_order,
                     'type' => $suggestion->type,
+                    'isSeller' => false,
                 ];
             }
         }

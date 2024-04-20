@@ -18,7 +18,7 @@ class RejectEmail extends Mailable
      *
      * @return void
      */
-    public function __construct(private $name)
+    public function __construct(private $name, private $rejectionReason)
     {
         //
     }
@@ -44,7 +44,10 @@ class RejectEmail extends Mailable
     {
         return new Content(
             view: 'drafts.reject-email',
-            with: ['name' => $this->name],
+            with: [
+                'name' => $this->name,
+                'rejectionReason' => $this->rejectionReason,
+            ],
         );
     }
 }

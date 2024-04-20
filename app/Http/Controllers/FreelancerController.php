@@ -7,7 +7,13 @@ use App\Mail\MyTestEmail;
 use App\Mail\RejectEmail;
 use App\Models\client;
 use App\Models\freelancer;
+use App\Models\freelancer_language;
+use App\Models\freelancer_skill;
+use App\Models\personal_url;
 use App\Models\picture;
+use App\Models\review;
+use App\Models\service;
+use App\Models\service_img;
 use App\Models\user;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -329,9 +335,40 @@ class FreelancerController extends Controller
             ->where('f.freelancer_id', $freelancer_id)
             ->first();
 
-        $formattedDate = Carbon::parse($freelancer->created_at)->format('F d, Y');
+        $user = user::find($freelancer->user_id);
 
-        return view('layouts.freelancerProfile', compact('freelancer', 'formattedDate'));
+        $formattedDate = Carbon::parse($user->email_verified_at)->format('F d, Y');
+
+        $personalurl = personal_url::where('freelancer_id', $freelancer_id)->get();
+        $reviewCount = review::where('freelancer_id', $freelancer_id)->count();
+        $avgRating = round(review::where('freelancer_id', $freelancer_id)->avg('rating'), 2);
+
+        $dataSK = DB::table('freelancer_skill as fs')
+            ->leftJoin('skill as s', 's.skill_id', '=', 'fs.skill_id')
+            ->where('freelancer_id', $freelancer_id)
+            ->get();
+
+        $dataLG = DB::table('freelancer_language as fl')
+            ->leftJoin('language as l', 'l.language_id', '=', 'fl.language_id')
+            ->where('freelancer_id', $freelancer_id)
+            ->get();
+
+        $portfolios = DB::table('portfolio as p')
+            ->leftJoin('portfolio_img as pi', 'pi.portfolio_id', '=', 'p.portfolio_id')
+            ->leftJoin('picture as pic', 'pic.picture_id', '=', 'pi.picture_id')
+            ->where('freelancer_id', $freelancer_id)
+            ->get();
+
+        $services = service::where('freelancer_id', $freelancer_id)->get();
+        foreach ($services as $item) {
+            $item->picasset = DB::table('service_img as si')
+                ->leftJoin('picture as p', 'p.picture_id', '=', 'si.picture_id')
+                ->where('si.service_id', $item->service_id)
+                ->pluck('p.picasset')
+                ->first();
+        }
+
+        return view('layouts.freelancerProfile', compact('freelancer', 'formattedDate', 'personalurl', 'reviewCount', 'avgRating', 'portfolios', 'dataLG', 'dataSK','services'));
     }
 
     public function freelancerRequestDetails($freelancer_id)
@@ -350,7 +387,6 @@ class FreelancerController extends Controller
                 'f.description',
                 'f.rating',
                 'f.revenue',
-                'f.link',
                 'u.user_id',
                 'u.picture_id',
                 'p.picasset',
@@ -391,7 +427,11 @@ class FreelancerController extends Controller
             ->where('f.freelancer_id', $freelancer_id)
             ->get();
 
-        return view('layouts.freelancerRequestDetails', compact('freelancer', 'occupation', 'sub_occupation', 'skills', 'language'));
+        $url = DB::table('personal_url as pu')
+            ->where('pu.freelancer_id', $freelancer_id)
+            ->get();
+
+        return view('layouts.freelancerRequestDetails', compact('freelancer', 'occupation', 'sub_occupation', 'skills', 'language', 'url'));
     }
 
     public function requestApprove($user_id, $freelancer_id)
@@ -419,10 +459,14 @@ class FreelancerController extends Controller
         return redirect()->route('freelancer.request')->with($notification);
     }
 
-    public function requestReject($user_id, $freelancer_id)
+    public function requestReject(Request $request)
     {
-        $user = user::where('user_id', $user_id)->first();
-        $freelancer = freelancer::where('freelancer_id', $freelancer_id)->first();
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $user = user::where('user_id', $request->user_id)->first();
+        $freelancer = freelancer::where('freelancer_id', $request->freelancer_id)->first();
 
         if (!$user) {
             $notification = array(
@@ -430,15 +474,14 @@ class FreelancerController extends Controller
                 'alert-type' => 'error'
             );
         } else {
-            $freelancer->delete();
-            Mail::to($user->email)->send(new RejectEmail($user->name));
+            $freelancer->isApproved = 'rejected';
+            $freelancer->save();
+            Mail::to($user->email)->send(new RejectEmail($user->name, $request->reason));
             $notification = array(
                 'message' => 'Request Rejected Successfully',
                 'alert-type' => 'success'
             );
         }
-
-
 
         return redirect()->route('freelancer.request')->with($notification);
     }

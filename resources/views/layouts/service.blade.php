@@ -82,7 +82,7 @@
 
                                     @foreach ($db_service as $key => $item)
                                         <tr>
-                                            <td><a href="#">Product-{{ $item->service_id }}</a></td>
+                                            <td><a href="{{ route('service.details', $item->service_id) }}">Product-{{ $item->service_id }}</a></td>
 
                                             <td>
                                                 @php

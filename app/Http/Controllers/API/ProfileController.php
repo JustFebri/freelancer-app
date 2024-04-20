@@ -13,6 +13,7 @@ use App\Http\Requests\API\TicketMessageRequest;
 use App\Http\Requests\API\UpdateProfileRequest;
 use App\Http\Requests\API\WithdrawRequest;
 use App\Models\freelancer;
+use App\Models\order;
 use App\Models\picture;
 use App\Models\user;
 use App\Models\report;

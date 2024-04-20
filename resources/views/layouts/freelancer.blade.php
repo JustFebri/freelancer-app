@@ -131,7 +131,6 @@
                                         <th>NIK</th>
                                         <th>Rating</th>
                                         <th>Total Sales</th>
-                                        <th>Revenue</th>
                                         <th>Created at</th>
                                         <th>Updated at</th>
                                         <th>Status</th>

@@ -11,62 +11,6 @@
                             font-size: 0.875rem;
                             font-weight: 500;">
                                 Service Data</h6>
-                            <div class="d-flex">
-                                {{-- <form method="POST" action="{{ route('service.request.reject', $service->service_id) }}">
-                                    @csrf
-                                    <button type="submit" class="btn btn-danger btn-icon me-1">
-                                        <i data-feather="x"></i>
-                                    </button>
-                                </form> --}}
-                                <button type="submit" class="btn btn-danger btn-icon me-1" data-bs-toggle="modal"
-                                    data-bs-target="#modalReason">
-                                    <i data-feather="x"></i>
-                                </button>
-                                <div class="modal fade" id="modalReason" tabindex="-1" aria-labelledby="modalReasonTitle"
-                                    aria-hidden="true" style="display: none;">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="modalReasonTitle">Rejection Response</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="btn-close"></button>
-                                            </div>
-                                            @if ($errors->any())
-                                                <script type="text/javascript">
-                                                    $(document).ready(function() {
-                                                        toastr.error("Validation Error");
-                                                    });
-                                                </script>
-                                            @endif
-                                            <form class="forms-sample" method="POST" enctype="multipart/form-data"
-                                                action="{{ route('service.request.reject') }}">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <input type="hidden" name="service_id" value="{{ $service->service_id }}">
-                                                    <div class="scrollable-content">
-                                                        <textarea name="reason" id="inputReason" class="form-control" maxlength="1000" rows="10"
-                                                            placeholder="This textarea has a limit of 1000 chars." @error('reason') is-invalid @enderror></textarea>
-                                                        @error('reason')
-                                                            <span class="text-danger">{{ $message }}</span>
-                                                        @enderror
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Close</button>
-                                                    <button type="submit" class="btn btn-primary">Send Response</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                <form method="POST" action="{{ route('service.request.approve', $service->service_id) }}">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-icon ms-1">
-                                        <i data-feather="check"></i>
-                                    </button>
-                                </form>
-                            </div>
                         </div>
                         <div class="row profile-body">
                             <!-- left wrapper start -->
@@ -95,7 +39,7 @@
                                                     @if ($loop->index == 0)
                                                         <div class="carousel-item active" data-bs-interval="3000">
                                                             <img src="{{ asset($item->picasset) }}"
-                                                                style="display: block; object-fit: contain; width: 100%; height: 500px;">
+                                                                style="display: block; object-fit: contain; width: 100%; height: 200px;">
                                                         </div>
                                                     @else
                                                         <div class="carousel-item" data-bs-interval="3000">
@@ -174,7 +118,7 @@
                                                     <tr>
                                                         <th scope="row">Price</th>
                                                         @foreach ($package as $key => $item)
-                                                            <td style="white-space: pre-wrap;">Rp. {{ $item->price }}
+                                                            <td>Rp. {{ $item->price }}
                                                             </td>
                                                         @endforeach
                                                     </tr>
@@ -182,14 +126,14 @@
                                                         <tr>
                                                             <th scope="row">Delivery Days</th>
                                                             @foreach ($package as $key => $item)
-                                                                <td style="white-space: pre-wrap;">
+                                                                <td>
                                                                     {{ $item->delivery_days }} Days Delivery</td>
                                                             @endforeach
                                                         </tr>
                                                         <tr>
                                                             <th scope="row">Revision</th>
                                                             @foreach ($package as $key => $item)
-                                                                <td style="white-space: pre-wrap;">{{ $item->revision }}
+                                                                <td>{{ $item->revision }}
                                                                     Revision
                                                                 </td>
                                                             @endforeach

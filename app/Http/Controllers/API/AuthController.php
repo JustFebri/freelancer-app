@@ -14,6 +14,7 @@ use App\Mail\ResetPassword;
 use App\Models\client;
 use App\Models\forgot_password;
 use App\Models\freelancer;
+use App\Models\order;
 use App\Models\picture;
 use App\Models\user;
 use GuzzleHttp\Exception\ClientException;
@@ -69,6 +70,12 @@ class AuthController extends Controller
         }
 
         $user = user::whereEmail($request->email)->first();
+        if ($user && $user->status == 'closed') {
+            return response([
+                'message' => 'Cannot log in. The account is closed.',
+            ], 422);
+        }
+
         if (!$user || !Hash::check($request->password, $user->password)) {
             $this->incrementAttempts($request);
             return response([
@@ -106,9 +113,43 @@ class AuthController extends Controller
         ], 200);
     }
 
+    public function closeAccount(Request $request)
+    {
+        $currentUserId = auth()->id();
+
+        $freelancer = freelancer::where('user_id', $currentUserId)->first();
+        if ($freelancer) {
+            $order = order::where('freelancer_id', $freelancer->freelancer_id)
+                ->whereNotIn('order_status', ['completed', 'pending', 'awaiting payment', 'cancelled'])
+                ->get();
+
+            if (!$order->isEmpty()) {
+                return response()->json([
+                    'message' => 'Cannot deactivate account. There are still active orders.',
+                ], 400);
+            }
+        }
+
+        $user = user::find($currentUserId);
+        $user->status = 'closed';
+        $user->save();
+
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Account Closed',
+        ], 200);
+    }
+
     public function forgot(ForgotPasswordRequest $request)
     {
         $user = user::where('email', $request->email)->first();
+
+        if ($user->status == 'closed') {
+            return response([
+                'message' => 'Cannot reset password. The account is closed.',
+            ], 422);
+        }
 
         if (!$user || !$user->email) {
             return response([

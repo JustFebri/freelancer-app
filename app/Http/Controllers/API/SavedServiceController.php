@@ -23,7 +23,7 @@ class SavedServiceController extends Controller
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
             ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
             ->where('ss.user_id', '=', $currentUserId)
-            ->select('s.service_id','s.title','f.user_id','u.name','sc.subcategory_name','s.custom_order','s.type','s.location','p.picasset','s.description','u.email')
+            ->select('s.service_id', 's.title', 'f.user_id', 'u.name', 'sc.subcategory_name', 's.custom_order', 's.type', 's.location', 'p.picasset', 's.description', 'u.email')
             ->get();
 
         foreach ($savedService as $item) {
@@ -33,6 +33,12 @@ class SavedServiceController extends Controller
             $item->rating = number_format($var['rating'], 1);
             $item->servicePic = app('App\Http\Controllers\API\ServiceController')->getAImage($item->service_id);
             $item->serviceFav = $this->show($item->service_id);
+
+            if ($item->user_id == $currentUserId) {
+                $item->isSeller = true;
+            } else {
+                $item->isSeller = false;
+            }
         }
 
         return response([

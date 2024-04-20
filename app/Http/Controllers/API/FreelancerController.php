@@ -52,6 +52,7 @@ use App\Models\sub_occupation;
 use App\Models\transactions;
 use App\Models\user;
 use App\Models\delivery;
+use App\Models\personal_url;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -63,103 +64,222 @@ class FreelancerController extends Controller
 {
     public function freelancerActivation(FreelancerActivationRequest $request)
     {
+        Log::info($request);
         $currentUserId = auth()->id();
         $user = user::find($currentUserId);
 
+        $findReqData = freelancer::where('user_id', $currentUserId)
+            ->where('isApproved', 'rejected')
+            ->first();
 
-        $file2 = $request->file('idCardImage')->store('public/images');
-        $file3 = $request->file('idCardWithSefieImage')->store('public/images');
+        if ($findReqData) {
+            if ($request->file('profileImage') != null) {
+                $picture = picture::findOrFail($user->picture_id);
+                $filename = basename($picture->picasset);
+                Storage::delete('public/images/' . $filename);
+                
+                $file1 = $request->file('profileImage')->store('public/images');
+                $filename = $request->file('profileImage')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
 
-        if ($request->file('profileImage') != null) {
-            $file1 = $request->file('profileImage')->store('public/images');
-            $filename = $request->file('profileImage')->hashName();
+                $picture->piclink = $url;
+                $picture->picasset = Storage::url($path);
+                $picture->save();
+
+                $user->name = $request->name;
+                $user->save();
+            }
+
+            if ($request->file('idCardImage') != null) {
+                $picture = picture::findOrFail($findReqData->id_card);
+                $filename = basename($picture->picasset);
+                Storage::delete('public/images/' . $filename);
+
+                $file2 = $request->file('idCardImage')->store('public/images');
+                $filename = $request->file('idCardImage')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+                $picture->piclink = $url;
+                $picture->picasset = Storage::url($path);
+                $picture->save();
+            }
+            if ($request->file('idCardWithSefieImage') != null) {
+                $picture = picture::findOrFail($findReqData->id_card_with_selfie);
+                $filename = basename($picture->picasset);
+                Storage::delete('public/images/' . $filename);
+
+                $file3 = $request->file('idCardWithSefieImage')->store('public/images');
+                $filename = $request->file('idCardWithSefieImage')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+                $picture->piclink = $url;
+                $picture->picasset = Storage::url($path);
+                $picture->save();
+            }
+
+            $findReqData->identity_number = $request->niknumber;
+            $findReqData->identity_name = $request->nikname;
+            $findReqData->identity_gender = $request->nikgender;
+            $findReqData->identity_address = $request->nikaddress;
+            $findReqData->description = $request->description;
+            $findReqData->isApproved = 'pending';
+            $findReqData->save();
+
+            freelancer_language::where('freelancer_id', $findReqData->freelancer_id)->delete();
+            occupation::where('freelancer_id', $findReqData->freelancer_id)->delete();
+            personal_url::where('freelancer_id', $findReqData->freelancer_id)->delete();
+            freelancer_skill::where('freelancer_id', $findReqData->freelancer_id)->delete();
+            sub_occupation::where('freelancer_id', $findReqData->freelancer_id)->delete();
+
+
+            $dataStringLanguages = $request->input('languages');
+            $dataArray = json_decode($dataStringLanguages);
+            foreach ($dataArray as $data) {
+                $result = language::where('language_name', $data->language)->value('language_id');
+                freelancer_language::create([
+                    'freelancer_id' => $findReqData->freelancer_id,
+                    'language_id' => $result,
+                    'proficiency_level' => $data->level,
+                ]);
+            }
+
+            $dataStringOccupations = $request->input('occupations');
+            $occupationData = json_decode($dataStringOccupations);
+            $result = category::where('category_name', $occupationData->occupation)->value('category_id');
+            occupation::create([
+                'freelancer_id' => $findReqData->freelancer_id,
+                'category_id' => $result,
+                'from' => $occupationData->from,
+                'to' => $occupationData->to,
+            ]);
+
+            $dataUrl = json_decode($request->url);
+            foreach ($dataUrl as $item) {
+                personal_url::create([
+                    'freelancer_id' => $findReqData->freelancer_id,
+                    'personalUrl' => $item,
+                ]);
+            }
+
+            $skillsArray = explode(',', $request->skills);
+            foreach ($skillsArray as $data) {
+                $record = skill::firstOrCreate(['skill_name' => $data]);
+                freelancer_skill::create([
+                    'freelancer_id' => $findReqData->freelancer_id,
+                    'skill_id' => $record->skill_id,
+                ]);
+            }
+
+            $skillsArray = explode(',', $request->subcategoryOccupation);
+            foreach ($skillsArray as $data) {
+                $result = sub_category::where('subcategory_name', $data)->value('subcategory_id');
+                sub_occupation::create([
+                    'freelancer_id' => $findReqData->freelancer_id,
+                    'subcategory_id' => $result,
+                ]);
+            }
+        } else {
+            $file2 = $request->file('idCardImage')->store('public/images');
+            $file3 = $request->file('idCardWithSefieImage')->store('public/images');
+
+            if ($request->file('profileImage') != null) {
+                $file1 = $request->file('profileImage')->store('public/images');
+                $filename = $request->file('profileImage')->hashName();
+                $path = 'public/images/' . $filename;
+                $url = asset(Storage::url($path));
+
+                $picData1 = [
+                    'piclink' => $url,
+                    'picasset' => Storage::url($path),
+                ];
+
+                $pic1 = picture::create($picData1);
+
+                $user->name = $request->name;
+                $user->picture_id = $pic1->picture_id;
+                $user->save();
+            }
+
+            $filename = $request->file('idCardImage')->hashName();
             $path = 'public/images/' . $filename;
             $url = asset(Storage::url($path));
-
-            $picData1 = [
+            $picData2 = [
                 'piclink' => $url,
                 'picasset' => Storage::url($path),
             ];
 
-            $pic1 = picture::create($picData1);
+            $filename = $request->file('idCardWithSefieImage')->hashName();
+            $path = 'public/images/' . $filename;
+            $url = asset(Storage::url($path));
+            $picData3 = [
+                'piclink' => $url,
+                'picasset' => Storage::url($path),
+            ];
 
-            $user->name = $request->name;
-            $user->picture_id = $pic1->picture_id;
-            $user->save();
-        }
+            $pic2 = picture::create($picData2);
+            $pic3 = picture::create($picData3);
 
-        $filename = $request->file('idCardImage')->hashName();
-        $path = 'public/images/' . $filename;
-        $url = asset(Storage::url($path));
-        $picData2 = [
-            'piclink' => $url,
-            'picasset' => Storage::url($path),
-        ];
-
-        $filename = $request->file('idCardWithSefieImage')->hashName();
-        $path = 'public/images/' . $filename;
-        $url = asset(Storage::url($path));
-        $picData3 = [
-            'piclink' => $url,
-            'picasset' => Storage::url($path),
-        ];
-
-        $pic2 = picture::create($picData2);
-        $pic3 = picture::create($picData3);
-
-        $freelancer = freelancer::create([
-            'user_id' => $currentUserId,
-            'identity_number' => $request->niknumber,
-            'identity_name' => $request->nikname,
-            'identity_gender' => $request->nikgender,
-            'identity_address' => $request->nikaddress,
-            'description' => $request->description,
-            'rating' => 0,
-            'revenue' => 0,
-            'link' => $request->url,
-            'id_card' => $pic2->picture_id,
-            'id_card_with_selfie' => $pic3->picture_id,
-            'isApproved' => "pending",
-        ]);
-
-        $dataStringLanguages = $request->input('languages');
-        $dataArray = json_decode($dataStringLanguages);
-        foreach ($dataArray as $data) {
-            $result = language::where('language_name', $data->language)->value('language_id');
-            freelancer_language::create([
-                'freelancer_id' => $freelancer->freelancer_id,
-                'language_id' => $result,
-                'proficiency_level' => $data->level,
+            $freelancer = freelancer::create([
+                'user_id' => $currentUserId,
+                'identity_number' => $request->niknumber,
+                'identity_name' => $request->nikname,
+                'identity_gender' => $request->nikgender,
+                'identity_address' => $request->nikaddress,
+                'description' => $request->description,
+                'rating' => 0,
+                'revenue' => 0,
+                'id_card' => $pic2->picture_id,
+                'id_card_with_selfie' => $pic3->picture_id,
+                'isApproved' => "pending",
             ]);
-        }
 
-        $dataStringOccupations = $request->input('occupations');
-        $occupationData = json_decode($dataStringOccupations);
-        $result = category::where('category_name', $occupationData->occupation)->value('category_id');
-        occupation::create([
-            'freelancer_id' => $freelancer->freelancer_id,
-            'category_id' => $result,
-            'from' => $occupationData->from,
-            'to' => $occupationData->to,
-        ]);
+            $dataStringLanguages = $request->input('languages');
+            $dataArray = json_decode($dataStringLanguages);
+            foreach ($dataArray as $data) {
+                $result = language::where('language_name', $data->language)->value('language_id');
+                freelancer_language::create([
+                    'freelancer_id' => $freelancer->freelancer_id,
+                    'language_id' => $result,
+                    'proficiency_level' => $data->level,
+                ]);
+            }
 
-
-        $skillsArray = explode(',', $request->skills);
-        foreach ($skillsArray as $data) {
-            $record = skill::firstOrCreate(['skill_name' => $data]);
-            freelancer_skill::create([
+            $dataStringOccupations = $request->input('occupations');
+            $occupationData = json_decode($dataStringOccupations);
+            $result = category::where('category_name', $occupationData->occupation)->value('category_id');
+            occupation::create([
                 'freelancer_id' => $freelancer->freelancer_id,
-                'skill_id' => $record->skill_id,
+                'category_id' => $result,
+                'from' => $occupationData->from,
+                'to' => $occupationData->to,
             ]);
-        }
 
-        $skillsArray = explode(',', $request->subcategoryOccupation);
-        foreach ($skillsArray as $data) {
-            $result = sub_category::where('subcategory_name', $data)->value('subcategory_id');
-            sub_occupation::create([
-                'freelancer_id' => $freelancer->freelancer_id,
-                'subcategory_id' => $result,
-            ]);
+            $dataUrl = json_decode($request->url);
+            foreach ($dataUrl as $item) {
+                personal_url::create([
+                    'freelancer_id' => $freelancer->freelancer_id,
+                    'personalUrl' => $item,
+                ]);
+            }
+
+            $skillsArray = explode(',', $request->skills);
+            foreach ($skillsArray as $data) {
+                $record = skill::firstOrCreate(['skill_name' => $data]);
+                freelancer_skill::create([
+                    'freelancer_id' => $freelancer->freelancer_id,
+                    'skill_id' => $record->skill_id,
+                ]);
+            }
+
+            $skillsArray = explode(',', $request->subcategoryOccupation);
+            foreach ($skillsArray as $data) {
+                $result = sub_category::where('subcategory_name', $data)->value('subcategory_id');
+                sub_occupation::create([
+                    'freelancer_id' => $freelancer->freelancer_id,
+                    'subcategory_id' => $result,
+                ]);
+            }
         }
 
         Mail::to(config('custom.admin_mail'))->send(new FreelancerAccountActivationRequest($request->nikname));
@@ -167,6 +287,55 @@ class FreelancerController extends Controller
         return response([
             'message' => 'Verification request has been successfully created',
         ], 201);
+    }
+
+    public function getFreelancerReq()
+    {
+        $currentUserId = auth()->id();
+        $freelancer = DB::table('freelancer as f')
+            ->leftJoin('picture as p1', 'p1.picture_id', '=', 'f.id_card')
+            ->leftJoin('picture as p2', 'p2.picture_id', '=', 'f.id_card_with_selfie')
+            ->where('user_id', $currentUserId)
+            ->select(
+                'f.*',
+                'p1.piclink as idPiclink',
+                'p2.piclink as idsPiclink'
+            )
+            ->first();
+
+        if ($freelancer) {
+            $listLanguage = DB::table('freelancer_language as fl')
+                ->leftJoin('language as l', 'l.language_id', '=', 'fl.language_id')
+                ->where('fl.freelancer_id', $freelancer->freelancer_id)
+                ->get();
+
+            $listSkills = DB::table('freelancer_skill as fs')
+                ->leftJoin('skill as s', 's.skill_id', '=', 'fs.skill_id')
+                ->where('fs.freelancer_id', $freelancer->freelancer_id)
+                ->get();
+
+            $listUrl = personal_url::where('freelancer_id', $freelancer->freelancer_id)->get();
+
+            $occupation = DB::table('occupation as o')
+                ->leftJoin('category as c', 'c.category_id', '=', 'o.category_id')
+                ->where('freelancer_id', $freelancer->freelancer_id)
+                ->first();
+
+            $subOccupation = DB::table('sub_occupation as so')
+                ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 'so.subcategory_id')
+                ->where('freelancer_id', $freelancer->freelancer_id)
+                ->get();
+
+            return response([
+                'message' => 'Founded',
+                'data' => $freelancer,
+                'listlanguages' => $listLanguage,
+                'listskills' => $listSkills,
+                'listurl' => $listUrl,
+                'occ' => $occupation,
+                'listsubocc' => $subOccupation,
+            ], 200);
+        }
     }
 
     public function packageActivation(AddServiceRequest $request)
@@ -186,7 +355,8 @@ class FreelancerController extends Controller
             'lng' => $request->lng,
             'type' => $request->type,
             'custom_order' => $request->customOrder,
-            'IsApproved' => 'pending'
+            'IsApproved' => 'pending',
+            'status' => 'pending',
         ]);
 
         $dataStringPackage = $request->input('packages');
@@ -242,25 +412,48 @@ class FreelancerController extends Controller
         $service->description = $request->desc;
         $service->type = $request->type;
         $service->custom_order = $request->customOrder;
+        $service->status = null;
         $service->IsApproved = 'pending';
         $service->lat = $request->lat;
         $service->lng = $request->lng;
         $service->location = $request->location ?? '';
         $service->save();
 
-        service_package::where('service_id', $request->serviceId)->delete();
-
         $dataStringPackage = $request->input('packages');
         $dataArray = json_decode($dataStringPackage);
+
+        $idArray = [];
+        foreach ($dataArray as $item) {
+            if ($item->id != null) {
+                $idArray[] = $item->id;
+            }
+        }
+
+        $deletedRows = service_package::where('service_id', $request->serviceId)
+            ->whereNotIn('package_id', $idArray)
+            ->update(['package_status' => 'archived']);
+
         foreach ($dataArray as $data) {
-            $result = service_package::create([
-                'service_id' => $service->service_id,
-                'title' => $data->title,
-                'description' => $data->desc,
-                'price' => $data->price,
-                'revision' => $data->revision,
-                'delivery_days' => $data->deliveryDays,
-            ]);
+            if ($data->id != null) {
+                $packageData = service_package::find($data->id);
+                if ($packageData) {
+                    $packageData->title = $data->title;
+                    $packageData->description = $data->desc;
+                    $packageData->price = $data->price;
+                    $packageData->revision = $data->revision;
+                    $packageData->delivery_days = $data->deliveryDays;
+                    $packageData->save();
+                }
+            } else {
+                $result = service_package::create([
+                    'service_id' => $service->service_id,
+                    'title' => $data->title,
+                    'description' => $data->desc,
+                    'price' => $data->price,
+                    'revision' => $data->revision,
+                    'delivery_days' => $data->deliveryDays,
+                ]);
+            }
         }
 
         if ($request->updateImage == 'true') {
@@ -305,25 +498,12 @@ class FreelancerController extends Controller
 
     function deleteSellerService(string $serviceId)
     {
-        $currentUserId = auth()->id();
+        $service = service::find($serviceId);
 
-        $service_img = service_img::where('service_id', $serviceId)->get();
+        if ($service != null) {
+            $service->status = 'archived';
+            $service->save();
 
-        foreach ($service_img as $item) {
-            $picture = picture::findOrFail($item->picture_id);
-            $filename = basename($picture->picasset);
-            Storage::delete('public/images/' . $filename);
-
-            $picture->delete();
-        }
-
-        $freelancer = freelancer::where('user_id', $currentUserId)->first();
-
-        $deletedRows = service::where('freelancer_id', $freelancer->freelancer_id)
-            ->where('service_id', $serviceId)
-            ->delete();
-
-        if ($deletedRows > 0) {
             return response([
                 'message' => 'Service has been successfully deleted.',
             ], 200);
@@ -344,7 +524,7 @@ class FreelancerController extends Controller
             ->select('s.type', 'c.category_name', 'sc.subcategory_name', 's.custom_order', 's.location', 's.title', 's.description', 's.service_id', 's.location', 's.lat', 's.lng')
             ->first();
 
-        $data->packages = DB::table('service_package as sp')->where('sp.service_id', '=', $data->service_id)->get();
+        $data->packages = DB::table('service_package as sp')->where('sp.service_id', '=', $data->service_id)->where('sp.package_status', '!=', 'archived')->get();
 
         $data->images = DB::table('service_img as si')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'si.picture_id')
@@ -504,11 +684,16 @@ class FreelancerController extends Controller
             ->where('fs.freelancer_id', '=', $freelancer->freelancer_id)
             ->get();
 
+        $freelancerPersonalUrl = DB::table('personal_url as pu')
+            ->where('pu.freelancer_id', '=', $freelancer->freelancer_id)
+            ->get();
+
         return response()->json([
             'freelancer' => $freelancer,
             'languages' => $freelancerLanguage,
             'skills' => $freelancerSkills,
             'language' => $freelancerLanguage,
+            'personalUrl' => $freelancerPersonalUrl,
         ], 200);
     }
 
@@ -609,6 +794,7 @@ class FreelancerController extends Controller
 
         $dataLanguage = freelancer_language::where('freelancer_id', $freelancer->freelancer_id)->delete();
         $dataSkill = freelancer_skill::where('freelancer_id', $freelancer->freelancer_id)->delete();
+        $dataUrl = personal_url::where('freelancer_id', $freelancer->freelancer_id)->delete();
 
         $freelancer = freelancer::find($freelancer->freelancer_id);
         $freelancer->description = $request->description;
@@ -631,6 +817,14 @@ class FreelancerController extends Controller
             freelancer_skill::create([
                 'freelancer_id' => $freelancer->freelancer_id,
                 'skill_id' => $record->skill_id,
+            ]);
+        }
+
+        $dataUrl = json_decode($request->url);
+        foreach ($dataUrl as $item) {
+            personal_url::create([
+                'freelancer_id' => $freelancer->freelancer_id,
+                'personalUrl' => $item,
             ]);
         }
 
@@ -723,6 +917,8 @@ class FreelancerController extends Controller
                 ->orderByDesc('o.updated_at')
                 ->get();
 
+            Log::info($package);
+
             $custom_orders = DB::table('order as o')
                 ->leftJoin('custom_orders as co', 'co.custom_id', '=', 'o.custom_id')
                 ->leftJoin('service as s', 's.service_id', '=', 'co.service_id')
@@ -740,7 +936,6 @@ class FreelancerController extends Controller
                 ->leftJoin('service as s', 's.service_id', '=', 'sp.service_id')
                 ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
                 ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
-                ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
                 ->where('s.freelancer_id', $freelancer->freelancer_id)
                 ->where('o.order_status', $status)
                 ->where('o.order_status', '!=', 'token')
@@ -748,13 +943,14 @@ class FreelancerController extends Controller
                 ->whereNotNull('o.package_id')
                 ->orderByDesc('o.updated_at')
                 ->get();
+            
+                Log::info($package);
 
             $custom_orders = DB::table('order as o')
                 ->leftJoin('custom_orders as co', 'co.custom_id', '=', 'o.custom_id')
                 ->leftJoin('service as s', 's.service_id', '=', 'co.service_id')
                 ->leftJoin('client as c', 'c.client_id', '=', 'o.client_id')
                 ->leftJoin('user as u', 'u.user_id', '=', 'c.user_id')
-                ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
                 ->where('co.freelancer_id', $freelancer->freelancer_id)
                 ->where('o.order_status', $status)
                 ->where('o.order_status', '!=', 'token')
@@ -765,6 +961,7 @@ class FreelancerController extends Controller
         }
 
         foreach ($package as $item) {
+            Log::info($item->updated_at);
             $tempOrder = order::find($item->order_id);
             $item->lat = $tempOrder->lat;
             $item->lng = $tempOrder->lng;
@@ -826,7 +1023,7 @@ class FreelancerController extends Controller
     {
         $order = order::find($request->order_id);
 
-        
+
 
         $tempClient = user::find($order->client_id);
         $tempFreelancer = freelancer::find($order->freelancer_id);

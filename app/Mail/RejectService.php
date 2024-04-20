@@ -18,7 +18,7 @@ class RejectService extends Mailable
      *
      * @return void
      */
-    public function __construct(private $serviceTitle, private $freelancerName, private $category, private $subCategory)
+    public function __construct(private $serviceTitle, private $freelancerName, private $category, private $subCategory, private $rejectionReason)
     {
         //
     }
@@ -44,7 +44,7 @@ class RejectService extends Mailable
     {
         return new Content(
             view: 'drafts.reject-email-service',
-            with: ['serviceTitle' => $this->serviceTitle, 'freelancerName' => $this->freelancerName, 'category' => $this->category, 'subCategory' => $this->subCategory],
+            with: ['serviceTitle' => $this->serviceTitle, 'freelancerName' => $this->freelancerName, 'category' => $this->category, 'subCategory' => $this->subCategory, 'rejectionReason' => $this->rejectionReason],
         );
     }
 }

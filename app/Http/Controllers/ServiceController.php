@@ -69,6 +69,7 @@ class ServiceController extends Controller
 
         $package = DB::table('service_package as sp')
             ->where('sp.service_id', $service_id)
+            ->where('sp.package_status', '!=', 'archived')
             ->get();
 
         return view('layouts.serviceRequestDetails', compact('service', 'picture', 'package',));
@@ -102,9 +103,13 @@ class ServiceController extends Controller
         return redirect()->route('service.request')->with($notification);
     }
 
-    public function requestReject($service_id)
+    public function requestReject(Request $request)
     {
-        $service = service::where('service_id', $service_id)->first();
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $service = service::where('service_id', $request->service_id)->first();
         $freelancer = freelancer::where('freelancer_id', $service->freelancer_id)->first();
         $user = user::where('user_id', $freelancer->user_id)->first();
         $subcategory = sub_category::where('subcategory_id', $service->subcategory_id)->first();
@@ -118,15 +123,37 @@ class ServiceController extends Controller
         } else {
             $service->IsApproved = 'rejected';
             $service->save();
-            Mail::to($user->email)->send(new RejectService($service->title, $user->name, $category->category_name, $subcategory->subcategory_name));
+            Mail::to($user->email)->send(new RejectService($service->title, $user->name, $category->category_name, $subcategory->subcategory_name, $request->reason,));
             $notification = array(
                 'message' => 'Request Rejected Successfully',
                 'alert-type' => 'success'
             );
         }
 
-
-
         return redirect()->route('service.request')->with($notification);
+    }
+
+    public function serviceDetails($service_id)
+    {
+        $service = DB::table('service as s')
+            ->leftJoin('sub_category as sc', 'sc.subcategory_id', '=', 's.subcategory_id')
+            ->leftJoin('category as c', 'c.category_id', '=', 'sc.category_id')
+            ->leftJoin('freelancer as f', 'f.freelancer_id', '=', 's.freelancer_id')
+            ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
+            ->where('s.service_id', $service_id)
+            ->select('s.service_id', 's.title', 's.description', 'c.category_name', 'sc.subcategory_name', 'f.freelancer_id', 'u.name', 's.type', 's.location', 's.custom_order')
+            ->first();
+
+        $picture = DB::table('service_img as si')
+            ->leftJoin('picture as p', 'p.picture_id', '=', 'si.picture_id')
+            ->where('si.service_id', $service_id)
+            ->get();
+
+        $package = DB::table('service_package as sp')
+            ->where('sp.service_id', $service_id)
+            ->where('sp.package_status', '!=', 'archived')
+            ->get();
+
+        return view('layouts.serviceDetails', compact('service', 'picture', 'package',));
     }
 }

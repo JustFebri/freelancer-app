@@ -53,6 +53,8 @@ Route::get('/email/resend/{email}', [AuthController::class, 'resend'])->name('ve
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/closeAccount', [AuthController::class, 'closeAccount']);
+
     Route::get('/getRequest', [ProfileController::class, 'getReq']);
     Route::get('/getUserType', [ProfileController::class, 'getUserType']);
     Route::post('/sendIssue', [ProfileController::class, 'sendIssue']);
@@ -79,6 +81,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/freelancer/requestConfirmation', [FreelancerController::class, 'requestConfirmation']);
     Route::post('/freelancer/deliver', [FreelancerController::class, 'deliverNow']);
     Route::get('/freelancer/getReviews', [FreelancerController::class, 'getReviews']);
+    Route::get('/freelancer/getFreelancerReq', [FreelancerController::class, 'getFreelancerReq']);
 
     Route::post('/chat/create', [ChatController::class, 'createChat']);
     Route::post('/chat/sendMessage', [ChatController::class, 'sendMessage']);
@@ -118,6 +121,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/getResult/{keyword}', [ServiceController::class, 'getResult']);
     Route::post('/getResult/filterData', [ServiceController::class, 'filterData']);
     Route::post('/getResult/filterSubCategory', [ServiceController::class, 'filterSubCategory']);
+
+    Route::get('/checkIfSeller/{serviceId}', [ServiceController::class, 'checkIfSeller']);
 });
 
 Route::get('/getPopularService', [ServiceController::class, 'getPopularService']);

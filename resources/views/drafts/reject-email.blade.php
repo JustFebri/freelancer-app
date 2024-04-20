@@ -15,6 +15,10 @@
         for a freelancer account at this time. Our review has revealed certain issues with the data provided, and we
         need to address these before proceeding with your application.</p>
 
+    <p>Specifically, the reason(s) for rejecting your application are as follows:</p>
+
+    <p><em>{{ $rejectionReason }}</em></p>
+
     <p>We understand that you may have genuine reasons for these discrepancies, and we want to ensure that our platform
         maintains the highest standards of quality and integrity. To move forward, we kindly request that you take the
         following steps:</p>
