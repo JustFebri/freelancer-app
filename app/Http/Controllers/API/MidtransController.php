@@ -322,18 +322,25 @@ class MidtransController extends Controller
         }
     }
 
+    // public function cancel(string $order_id)
+    // {
+    //     $client = new \GuzzleHttp\Client();
+
+    //     $response = $client->request('POST', 'https://api.sandbox.midtrans.com/v2/' . $order_id . '/cancel', [
+    //         'headers' => [
+    //             'accept' => 'application/json',
+    //             'authorization' => 'Basic U0ItTWlkLXNlcnZlci1venFRNDBmQ05EYlk5UnFsRWxneEZMMVY6',
+    //         ],
+    //     ]);
+
+    //     Log::info($response->getBody());
+    // }
+    
     public function cancel(string $order_id)
     {
-        $client = new \GuzzleHttp\Client();
-
-        $response = $client->request('POST', 'https://api.sandbox.midtrans.com/v2/' . $order_id . '/cancel', [
-            'headers' => [
-                'accept' => 'application/json',
-                'authorization' => 'Basic U0ItTWlkLXNlcnZlci1venFRNDBmQ05EYlk5UnFsRWxneEZMMVY6',
-            ],
-        ]);
-
-        Log::info($response->getBody());
+        $order = order::find($order_id);
+        $order->order_status = 'cancelled';
+        $order->save();
     }
 
     public function refund(string $order_id)
@@ -363,7 +370,59 @@ class MidtransController extends Controller
         $freelancer = freelancer::find($order->freelancer_id);
         broadcast(new UpdateOrderFreelancer($freelancer->user_id))->toOthers();
     }
-
+    
+    public function markDelivered(string $order_id)
+    {
+        try {
+            // Mulai transaction (opsional tapi aman)
+            DB::beginTransaction();
+    
+            // Ambil order berdasarkan order_id
+            $order = Order::firstWhere('order_id', $order_id);
+    
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found',
+                ], 404);
+            }
+    
+            // Validasi status order
+            if ($order->order_status !== 'in progress') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order status is not in progress',
+                ], 400);
+            }
+    
+            // Update status dan delivered_at
+            $order->update([
+                'order_status' => 'delivered',
+                'delivered_at' => now(), // pastikan kolom ada di database
+            ]);
+    
+            DB::commit();
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Order marked as delivered',
+                'data' => [
+                    'order_id' => $order->order_id,
+                    'status' => $order->order_status,
+                    'delivered_at' => $order->delivered_at,
+                ],
+            ], 200);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark order as delivered',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     public function paymethodBalance(BalancePayment $request)
     {
@@ -454,3 +513,5 @@ class MidtransController extends Controller
         ], 200);
     }
 }
+
+

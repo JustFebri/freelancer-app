@@ -62,7 +62,9 @@ class ClientController extends Controller
                 ->where('user_id', $authenticatedUserId)
                 ->count();
 
-            $item->token = $dataTemp->token;
+            // $item->token = $dataTemp->token;
+            $item->token = optional($dataTemp)->token;
+
 
             $count = delivery::where('order_id', $item->order_id)->where('fileUrl', '!=', null)->count();
             if ($count == 0) {
@@ -121,10 +123,11 @@ class ClientController extends Controller
         $data = DB::table('freelancer as f')
             ->leftJoin('user as u', 'u.user_id', '=', 'f.user_id')
             ->leftJoin('picture as p', 'p.picture_id', '=', 'u.picture_id')
-            ->where('f.freelancer_id', $freelancer_id)
-            ->select('p.piclink', 'u.name', 'f.description')
+            ->where('u.user_id', $freelancer_id)
+            ->select('p.piclink', 'u.name', 'f.description', 'f.freelancer_id')
             ->first();
-
+            
+        $freelancer_id = $data->freelancer_id;
         $data->avg = review::where('freelancer_id', $freelancer_id)->avg('rating');
         $data->avg = round((float)$data->avg, 1);
         $data->count = review::where('freelancer_id', $freelancer_id)->count();

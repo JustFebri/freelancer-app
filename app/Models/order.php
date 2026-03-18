@@ -10,6 +10,8 @@ class order extends Model
     use HasFactory;
     protected $table = 'order';
     protected $primaryKey = 'order_id';
+    public $incrementing = false; // 🔥 WAJIB
+    protected $keyType = 'string'; // 🔥 WAJIB
     protected $casts = [
         'order_id' => 'string',
     ];
@@ -22,6 +24,7 @@ class order extends Model
         'due_date',
         'freelancer_id',
         'amount',
+        'snap_token',
         'onsite_date',
         'address',
         'lat',

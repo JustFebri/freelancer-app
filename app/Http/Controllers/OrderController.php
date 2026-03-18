@@ -56,7 +56,10 @@ class OrderController extends Controller
             $item->seller = $userFreelancer->name;
 
             $payment = payment::where('order_id',$item->order_id)->first();
-            $item->payment = $payment->payment_type;
+            if($payment != null){
+                 $item->payment = $payment->payment_type;
+            }
+           
         }
         Log::info($type);
         return view('layouts.order', compact('type'));
