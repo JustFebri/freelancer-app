@@ -7,6 +7,7 @@ use App\Http\Controllers\API\ChatMessageController;
 use App\Http\Controllers\API\ClientController;
 use App\Http\Controllers\API\FreelancerController;
 use App\Http\Controllers\API\MidtransController;
+use App\Http\Controllers\API\NoteController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\SavedServiceController;
@@ -105,6 +106,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/midtrans/payment/custom_order', [MidtransController::class, 'createCustom']);
     Route::post('midtrans/payment/cancel/{order_id}', [MidtransController::class, 'cancel']);
     Route::post('midtrans/payment/refund/{order_id}', [MidtransController::class, 'refund']);
+    Route::post('order/mark-delivered/{order_id}', [MidtransController::class, 'markDelivered']);
 
     Route::post('/packageActivation', [FreelancerController::class, 'packageActivation']);
     Route::post('/updateService', [FreelancerController::class, 'updateService']);
@@ -123,7 +125,16 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/getResult/filterSubCategory', [ServiceController::class, 'filterSubCategory']);
 
     Route::get('/checkIfSeller/{serviceId}', [ServiceController::class, 'checkIfSeller']);
+    
+    Route::get('/notes', [NoteController::class, 'index']);
+    Route::post('/notes', [NoteController::class, 'store']);
+    Route::put('/notes/{id}', [NoteController::class, 'update']);
+    Route::delete('/notes/{id}', [NoteController::class, 'destroy']);
+    
+    Route::post('/create-transaction', [PaymentController::class, 'createTransaction']);
 });
+
+Route::post('/midtrans/webhook', [PaymentController::class, 'midtransWebhook']);
 
 Route::get('/getPopularService', [ServiceController::class, 'getPopularService']);
 Route::get('/getAllCategory', [ServiceController::class, 'getAllCategory']);
@@ -143,5 +154,7 @@ Route::post('/getResult/filterSubCategoryNotLogged', [ServiceController::class, 
 Route::get('/getPortfolio/{portfolio_id}', [FreelancerController::class, 'getPortfolioById']);
 
 Route::post('/midtrans/payment/webhook', [MidtransController::class, 'webhook']);
+
 // Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
 // Route::post('/payout/webhook/xendit', [PaymentController::class, 'webhook']);
+
